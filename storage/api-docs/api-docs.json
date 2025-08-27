@@ -1,0 +1,24 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Nama API Kamu",
+        "description": "Deskripsi API kamu",
+        "contact": {
+            "email": "admin@example.com"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/users": {
+            "get": {
+                "summary": "List semua user",
+                "operationId": "7783cd566a9a0b4d2db5fd298cb61c70",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil menampilkan daftar user"
+                    }
+                }
+            }
+        }
+    }
+}
