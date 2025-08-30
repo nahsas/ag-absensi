@@ -28,10 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
             
             // Definisikan slot waktu
             $slots = [
-                'absen_pagi' => ['start' => $settings['absen_pagi']->jam, 'end' => $settings['absen_pagi']->batas_jam],
-                'absen_istirahat' => ['start' => $settings['absen_istirahat']->jam, 'end' => $settings['absen_istirahat']->batas_jam],
-                'kembali_istirahat' => ['start' => $settings['kembali_istirahat']->jam, 'end' => $settings['kembali_istirahat']->batas_jam],
-                'absen_pulang' => ['start' => $settings['absen_pulang']->jam, 'end' => $settings['absen_pulang']->batas_jam],
+                'absen_pagi' => ['start' => $settings['Jam masuk']->jam, 'end' => $settings['Jam masuk']->batas_jam],
+                'absen_istirahat' => ['start' => $settings['Istirahat']->jam, 'end' => $settings['Istirahat']->batas_jam],
+                'kembali_istirahat' => ['start' => $settings['Masuk Kembali']->jam, 'end' => $settings['Masuk Kembali']->batas_jam],
+                'absen_pulang' => ['start' => $settings['Pulang']->jam, 'end' => $settings['Pulang']->batas_jam],
             ];
 
             foreach ($slots as $slotName => $times) {
@@ -40,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 if ($now->greaterThanOrEqualTo($startTime) && $now->lessThanOrEqualTo($endTime)) {
                     // Cek user yang sudah absen hari ini
-                    $usersWithAttendance = Absen::whereDate('tanggal_absen', $today)
+                    $usersWithAttendance = Absen::whereBetween('tanggal_absen', [$startTime, $endTime])
                         ->where('keterangan', '!=', 'tanpa_keterangan') // Cek yang bukan tanpa_keterangan
                         ->pluck('user_id')
                         ->toArray();
@@ -59,7 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
                                 'user_id' => $user->id,
                                 'keterangan' => 'tanpa_keterangan',
                                 'bukti' => null,
-                                'point' => 0,
+                                'point' => -50,
                                 'tanggal_absen' => $endTime->format('Y-m-d H:i:s'),
                                 'show' => true,
                                 'created_at' => now(),
@@ -74,7 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     }
                 }
             }
-        })->everyFifteenMinutes(); // Ganti dengan jadwal yang kamu mau
+        })->everyMinute(); // Ganti dengan jadwal yang kamu mau
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

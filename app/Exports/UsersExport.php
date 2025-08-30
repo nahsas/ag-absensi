@@ -2,13 +2,14 @@
 
 namespace App\Exports;
 
-use App\Models\Absen;
 use App\Models\User;
+use App\Models\Absen;
 use App\Models\SettingJam;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\FromCollection;
 
 class UsersExport implements FromCollection, WithHeadings
 {
@@ -48,15 +49,15 @@ class UsersExport implements FromCollection, WithHeadings
     */
     public function collection()
     {
-        $users = User::with(['absens' => function ($query) {
+        $users = User::with(['absen' => function ($query) {
             $query->whereBetween('tanggal_absen', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59']);
         }])->get();
 
         $exportData = new Collection();
 
         foreach ($users as $user) {
-            $absensGroupedByDate = $user->absens->groupBy(function ($absen) {
-                return $absen->tanggal_absen->format('Y-m-d');
+            $absensGroupedByDate = $user->absen->groupBy(function ($absen) {
+                return Carbon::parse($absen->tanggal_absen)->format('Y-m-d');
             });
 
             $totalHadir = 0;
@@ -76,10 +77,10 @@ class UsersExport implements FromCollection, WithHeadings
                         $hadirCount++;
                         // Calculate late minutes for 'hadir' status only
                         $absenPagi = $absens->firstWhere(function($absen){
-                            return $absen->tanggal_absen->format('H:i:s') < ($this->settings['absen_istirahat']->jam ?? '12:00:00');
+                            return Carbon::parse($absen->tanggal_absen)->format('H:i:s') < ($this->settings['absen_istirahat']->jam ?? '12:00:00');
                         });
-                        if ($absenPagi && $absenPagi->tanggal_absen->format('H:i:s') > ($this->settings['absen_pagi']->jam ?? '08:00:00')) {
-                            $lateMinutes = $absenPagi->tanggal_absen->diffInMinutes($absenPagi->tanggal_absen->startOfDay()->addHours(8));
+                        if ($absenPagi && Carbon::parse($absenPagi->tanggal_absen)->format('H:i:s') > ($this->settings['absen_pagi']->jam ?? '08:00:00')) {
+                            $lateMinutes = Carbon::parse($absenPagi->tanggal_absen)->diffInMinutes(Carbon::parse($absenPagi->tanggal_absen)->startOfDay()->addHours(8));
                             $totalLateMinutes += $lateMinutes;
                         }
                         break;
