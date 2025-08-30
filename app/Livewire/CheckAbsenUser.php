@@ -17,7 +17,7 @@ class CheckAbsenUser extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn()=>Absen::class)
+            // ->query(fn()=>Absen::sort)
             ->columns(components: [
                 // ...
             ]);

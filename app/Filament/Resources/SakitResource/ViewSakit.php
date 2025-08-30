@@ -1,43 +1,41 @@
 <?php
 
-namespace App\Filament\Resources\IzinResource\Pages;
+namespace App\Filament\Resources\SakitResource\Pages;
 
 use App\Models\Absen;
 use Filament\Actions;
 use Filament\Actions\Action;
+use Illuminate\Support\Carbon;
 use Filament\Infolists\Infolist;
+use Illuminate\Support\Facades\Auth;
 use Filament\Infolists\Components\Card;
 use Filament\Infolists\Components\Grid;
-use App\Filament\Resources\IzinResource;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Split;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use App\Filament\Resources\SakitResource;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Components\ImageEntry;
 
-class ViewIzin extends ViewRecord
+class ViewSakit extends ViewRecord
 {
-    protected static string $resource = IzinResource::class;
+    protected static string $resource = SakitResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('Termasuk kebutuhan kantor')
+            Action::make('Setujui')
                 ->requiresConfirmation()
-                ->form([
-                    TextInput::make('point')
-                        ->numeric()
-                        ->maxValue(20)
-                        ->placeholder('Maximal memberikan 20 point')
-                        ->default(0)
-                ])
                 ->color('success')
                 ->visible(fn($record)=>!$record->approved)
                 ->action(function($record,$data){
                     $absen = Absen::find($record->absen_id);
+
+                    $date = $record->tanggal;
+                    $absen_to_remove = Absen::whereBetween('tanggal_absen',[Carbon::parse($date)->startOfDay(), Carbon::parse($date)->endOfDay()])->where('user_id',$record->user_id)->where('keterangan','tanpa_keterangan')->get();
 
                     if(!$absen){
                         return Notification::make()
@@ -47,8 +45,9 @@ class ViewIzin extends ViewRecord
                             ->send();
                     }
 
-                    $absen->point = $data['point'];
-                    $absen->save();
+                    foreach($absen_to_remove as $remove){
+                        $remove->delete();
+                    }
 
                     $record->approved = True;
                     $record->save();
@@ -68,20 +67,12 @@ class ViewIzin extends ViewRecord
                 Card::make([
                     Grid::make(2)
                         ->schema([
-                            TextEntry::make('judul'),
                             TextEntry::make('user.name')
                                 ->label('Nama'),
-                            TextEntry::make('keluar_selama')
-                                ->label('Lama Izin')
-                                ->suffix(' Menit'),
-                            TextEntry::make('absen.tanggal_absen')
-                                ->label('Jam Keluar')
-                                ->time(),
-                            TextEntry::make('jam_kembali')
-                                ->time(),
+                            TextEntry::make('alasan'),
                             IconEntry::make('approved')
                                 ->boolean()
-                                ->label('Kebutuhan kantor')
+                                ->label('Disetujui')
                                 ->trueIcon('heroicon-o-check-badge')
                                 ->falseIcon('heroicon-o-x-circle'),
                             TextEntry::make('absen.point')
@@ -101,7 +92,7 @@ class ViewIzin extends ViewRecord
                     ]),
                 Card::make([
                     ViewEntry::make('')
-                        ->view('OnlineImage',fn($record)=>['image'=>$record->bukti_kembali])
+                        ->view('OnlineImage',fn($record)=>['image'=>$record->bukti_sakit,'title'=>"Bukti Sakit"])
                 ])
             ])
             ->columnSpanFull(),

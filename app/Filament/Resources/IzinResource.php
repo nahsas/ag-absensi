@@ -54,7 +54,7 @@ class IzinResource extends Resource
                     ->required()
                     ->label('Durasi Keluar (menit)'),
                 Toggle::make('approved')
-                    ->label('Disetujui')
+                    ->label('Kebutuhan kantor')
                     ->default(false)
                     ->hidden(), // Sembunyikan dari form
                 TextInput::make('point')
@@ -70,6 +70,7 @@ class IzinResource extends Resource
         return $table
             ->modifyQueryUsing(fn(Builder $query)=>$query->orderBy('jam_kembali','DESC'))
             ->columns([
+                TextColumn::make('judul')->searchable()->sortable(),
                 TextColumn::make('user.name')->searchable()->sortable(),
                 TextColumn::make('alasan')->limit(50)
                     ->formatStateUsing(function($state){
@@ -86,7 +87,7 @@ class IzinResource extends Resource
                 TextColumn::make('jam_kembali')->dateTime()->label('Waktu Kembali')->sortable(),
                 TextColumn::make('keluar_selama')->label('Lama Izin')
                     ->suffix(' Menit'),
-                BooleanColumn::make('approved')->label('Disetujui'),
+                BooleanColumn::make('approved')->label('Kebutuhan kantor'),
                 TextColumn::make('absen.point')
                     ->suffix(' Point'),
             ])
@@ -94,44 +95,44 @@ class IzinResource extends Resource
                 //
             ])
             ->actions([
-                // Aksi 'setujui' untuk superadmin
-                Action::make('setujui')
-                    ->visible(fn ($record) => ! $record->approved)
-                    ->requiresConfirmation()
-                    ->form([
-                        TextInput::make('point')
-                            ->numeric()
-                            ->maxValue(20)
-                            ->placeholder('Maximal memberikan 20 point')
-                            ->default(0)
-                    ])
-                    ->color('success')
-                    ->visible(fn($record)=>!$record->approved)
-                    ->action(function($record,$data){
-                        $absen = Absen::find($record->absen_id);
+                // // Aksi 'setujui' untuk superadmin
+                // Action::make('Termasuk kebutuhan kantor')
+                //     ->visible(fn ($record) => ! $record->approved)
+                //     ->requiresConfirmation()
+                //     ->form([
+                //         TextInput::make('point')
+                //             ->numeric()
+                //             ->maxValue(20)
+                //             ->placeholder('Maximal memberikan 20 point')
+                //             ->default(0)
+                //     ])
+                //     ->color('success')
+                //     ->visible(fn($record)=>!$record->approved)
+                //     ->action(function($record,$data){
+                //         $absen = Absen::find($record->absen_id);
 
-                        if(!$absen){
-                            return Notification::make()
-                                ->danger()
-                                ->title('Gagal aprrove izin')
-                                ->body('Terjadi sesuatu pada program sehingga gagal untuk approve izin ini')
-                                ->send();
-                        }
+                //         if(!$absen){
+                //             return Notification::make()
+                //                 ->danger()
+                //                 ->title('Gagal aprrove izin')
+                //                 ->body('Terjadi sesuatu pada program sehingga gagal untuk approve izin ini')
+                //                 ->send();
+                //         }
 
-                        $absen->point = $data['point'];
-                        $absen->save();
+                //         $absen->point = $data['point'];
+                //         $absen->save();
 
-                        $record->approved = True;
-                        $record->save();
+                //         $record->approved = True;
+                //         $record->save();
 
-                        return Notification::make()
-                            ->success()
-                            ->title('Izin berhasil di approve')
-                            ->body('Izin ini berhasil di approve')
-                            ->send();
-                    })
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
+                //         return Notification::make()
+                //             ->success()
+                //             ->title('Izin berhasil di approve')
+                //             ->body('Izin ini berhasil di approve')
+                //             ->send();
+                //     })
+                //     ->icon('heroicon-o-check-circle')
+                //     ->color('success')
             ]);
     }
 

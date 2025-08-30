@@ -11,7 +11,7 @@ class Izin extends Model
     ];
 
     public function absen()
-    {
+    { 
         return $this->belongsTo(Absen::class, "absen_id","id");
     }
 
