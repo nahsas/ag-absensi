@@ -4,138 +4,117 @@ namespace App\Exports;
 
 use App\Models\Absen;
 use App\Models\User;
+use App\Models\SettingJam;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class UsersExport implements FromCollection
+class UsersExport implements FromCollection, WithHeadings
 {
+    protected $startDate;
+    protected $endDate;
+    protected $settings;
+
+    public function __construct($month = null)
+    {
+        $date = now();
+        if ($month) {
+            $date = $date->month($month);
+        }
+        $this->startDate = $date->startOfMonth()->format('Y-m-d');
+        $this->endDate = $date->endOfMonth()->format('Y-m-d');
+        $this->settings = SettingJam::get()->keyBy('nama_jam');
+    }
+
+    public function headings(): array
+    {
+        return [
+            'Nama',
+            'NIP',
+            'Hari Kerja',
+            'Total Hadir',
+            'Total Sakit',
+            'Total Izin',
+            'Total Tanpa Keterangan',
+            'Total Dinas Luar',
+            'Total Telat Masuk (menit)',
+            'Rata-rata Telat (menit)',
+        ];
+    }
+
     /**
     * @return \Illuminate\Support\Collection
     */
     public function collection()
     {
-        $res = [
-            [
-                "Nama",
-                "Jumlah Absen Bulan Ini",
-                "Point Yang Di Peroleh",
-                "Performa"
-            ]
-        ];
+        $users = User::with(['absens' => function ($query) {
+            $query->whereBetween('tanggal_absen', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59']);
+        }])->get();
 
-        $users = User::all();
-        $now = now();
-        $bulanIni = $now->format('m');
-        $tahunIni = $now->format('Y');
-        foreach($users as $user){
-            // Ambil absen pagi (keterangan 'hadir') per hari di bulan ini
-            $absenPagi = $user->absen()
-                ->whereMonth('tanggal_absen', $bulanIni)
-                ->whereYear('tanggal_absen', $tahunIni)
-                ->whereIn('keterangan', ['hadir','dinas_luar'])
-                ->orderBy('tanggal_absen', 'asc')
-                ->get()
-                ->groupBy(function($item) {
-                    return \Carbon\Carbon::parse($item->tanggal_absen)->format('Y-m-d');
-                });
-            $jumlahAbsenBulanIni = $absenPagi->count();
+        $exportData = new Collection();
 
-            // Hitung point bulan ini
-            $pointBulanIni = $user->absen()
-                ->whereMonth('tanggal_absen', $bulanIni)
-                ->whereYear('tanggal_absen', $tahunIni)
-                ->sum('point');
+        foreach ($users as $user) {
+            $absensGroupedByDate = $user->absens->groupBy(function ($absen) {
+                return $absen->tanggal_absen->format('Y-m-d');
+            });
 
-            // Hitung performa: persentase kehadiran pagi dibanding hari kerja (exclude 'tanpa_keterangan')
-            $absenBulanIni = $user->absen()
-                ->whereMonth('tanggal_absen', $bulanIni)
-                ->whereYear('tanggal_absen', $tahunIni)
-                ->get()
-                ->groupBy(function($item) {
-                    return \Carbon\Carbon::parse($item->tanggal_absen)->format('Y-m-d');
-                });
-            $hariKerja = 0;
-            $hadirPagi = 0;
-            foreach($absenBulanIni as $tanggal => $absens){
-                $adaTanpaKeterangan = $absens->where('keterangan', 'tanpa_keterangan')->count() > 0;
-                if(!$adaTanpaKeterangan){
-                    $hariKerja++;
-                    // Cek ada absen pagi (hadir)
-                    if($absens->whereIn('keterangan', ['hadir','dinas_luar'])->count() > 0){
-                        $hadirPagi++;
-                    }
+            $totalHadir = 0;
+            $totalSakit = 0;
+            $totalIzin = 0;
+            $totalTanpaKeterangan = 0;
+            $totalDinasLuar = 0;
+            $totalLateMinutes = 0;
+            $hadirCount = 0;
+
+            foreach ($absensGroupedByDate as $date => $absens) {
+                $status = $absens->first()->keterangan;
+
+                switch ($status) {
+                    case 'hadir':
+                        $totalHadir++;
+                        $hadirCount++;
+                        // Calculate late minutes for 'hadir' status only
+                        $absenPagi = $absens->firstWhere(function($absen){
+                            return $absen->tanggal_absen->format('H:i:s') < ($this->settings['absen_istirahat']->jam ?? '12:00:00');
+                        });
+                        if ($absenPagi && $absenPagi->tanggal_absen->format('H:i:s') > ($this->settings['absen_pagi']->jam ?? '08:00:00')) {
+                            $lateMinutes = $absenPagi->tanggal_absen->diffInMinutes($absenPagi->tanggal_absen->startOfDay()->addHours(8));
+                            $totalLateMinutes += $lateMinutes;
+                        }
+                        break;
+                    case 'sakit':
+                        $totalSakit++;
+                        break;
+                    case 'izin':
+                        $totalIzin++;
+                        break;
+                    case 'tanpa_keterangan':
+                        $totalTanpaKeterangan++;
+                        break;
+                    case 'dinas_luar':
+                        $totalDinasLuar++;
+                        break;
                 }
             }
-            // Hitung hari kerja bulan ini (Senin-Jumat)
-            $startOfMonth = \Carbon\Carbon::create($tahunIni, $bulanIni, 1);
-            $endOfMonth = $startOfMonth->copy()->endOfMonth();
-            $hariKerja = 0;
-            for ($date = $startOfMonth->copy(); $date <= $endOfMonth; $date->addDay()) {
-                if ($date->isWeekday()) {
-                    $hariKerja++;
-                }
-            }
-            $performa = $hariKerja > 0 ? round(($hadirPagi / $hariKerja) * 100, 2) . '%' : '0%';
 
-            $res[] = [
-                $user->name,
-                $jumlahAbsenBulanIni,
-                $pointBulanIni,
-                $performa
-            ];
+            $totalWorkingDays = $absensGroupedByDate->count();
+            $averageLateMinutes = $hadirCount > 0 ? $totalLateMinutes / $hadirCount : 0;
+
+            $exportData->push([
+                'name' => $user->name,
+                'nip' => $user->nip,
+                'total_working_days' => $totalWorkingDays,
+                'total_hadir' => $totalHadir,
+                'total_sakit' => $totalSakit,
+                'total_izin' => $totalIzin,
+                'total_tanpa_keterangan' => $totalTanpaKeterangan,
+                'total_dinas_luar' => $totalDinasLuar,
+                'total_late_minutes' => $totalLateMinutes,
+                'average_late_minutes' => round($averageLateMinutes, 2),
+            ]);
         }
-
-        // Contoh formula: total point seluruh user
-        $totalPointFormula = '=SUM(C2:C' . (count($res)) . ')';
-        $res[] = [
-            'Total Point',
-            '',
-            $totalPointFormula,
-            ''
-        ];
-
-        $res[] = [
-            [
-                "",
-                "",
-                "",
-            ]
-        ];
-
-        $res[] = [
-            [
-                "",
-                "",
-                "",
-            ]
-        ];
-
-        $res[] = [
-            'Nama',
-            'Tanggal Absen',
-            'Keterangan',
-            'Point',
-            'Apakah Terlambat',
-        ];
-
-        // Ambil history absen, urutkan berdasarkan nama user lalu tanggal absen (desc)
-        $absen = Absen::with('user')
-            ->orderBy('user_id')
-            ->orderByDesc('tanggal_absen')
-            ->get();
-        foreach($absen as $data){
-            $res[] = [
-                $data->user ? $data->user->name : '-',
-                $data->tanggal_absen,
-                $data->keterangan,
-                $data->point,
-                $data->point < 0 ? 'Terlambat' : 'Tepat Waktu',
-            ];
-        }
-
-        $res = collect($res);
-
-        // dd($res);
-
-        return $res ? $res : [];
+        
+        return $exportData;
     }
 }
