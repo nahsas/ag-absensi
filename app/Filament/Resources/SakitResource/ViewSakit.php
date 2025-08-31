@@ -30,7 +30,7 @@ class ViewSakit extends ViewRecord
             Action::make('Setujui')
                 ->requiresConfirmation()
                 ->color('success')
-                ->visible(fn($record)=>!$record->approved)
+                ->visible(fn($record)=>$record->approved == null)
                 ->action(function($record,$data){
                     $absen = Absen::find($record->absen_id);
 
@@ -49,13 +49,37 @@ class ViewSakit extends ViewRecord
                         $remove->delete();
                     }
 
-                    $record->approved = True;
+                    $record->approved = true;
                     $record->save();
 
                     return Notification::make()
                         ->success()
                         ->title('Izin berhasil di approve')
                         ->body('Izin ini berhasil di approve')
+                        ->send();
+                }),
+            Action::make('Tolak')
+                ->requiresConfirmation()
+                ->color('danger')
+                ->visible(fn($record)=>$record->approved == null)
+                ->action(function($record,$data){
+                    $absen = Absen::find($record->absen_id);
+
+                    if(!$absen){
+                        return Notification::make()
+                            ->danger()
+                            ->title('Gagal tolak izin')
+                            ->body('Terjadi sesuatu pada program sehingga gagal untuk menolak izin ini')
+                            ->send();
+                    }
+
+                    $record->approved = false;
+                    $record->save();
+
+                    return Notification::make()
+                        ->success()
+                        ->title('Izin berhasil di ditolak')
+                        ->body('Izin ini berhasil di ditolak')
                         ->send();
                 })
         ];

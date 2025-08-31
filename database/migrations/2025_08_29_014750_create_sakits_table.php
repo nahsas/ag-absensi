@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignUuid('absen_id')->constrained('absens')->onDelete('cascade');
             $table->string('bukti_sakit')->nullable();
             $table->datetime('tanggal')->nullable();
-            $table->boolean('approved')->default(false);
+            $table->boolean('approved')->nullable()->default(null);
             $table->timestamps();
         });
     }
