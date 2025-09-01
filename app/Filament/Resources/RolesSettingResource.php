@@ -23,11 +23,16 @@ class RolesSettingResource extends Resource
     protected static ?string $model = RolesSetting::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-8-tooth';
+    public static function ShouldRegisterNavigation(): bool{
+        return auth()->user()->role->name == 'superadmin';
+    }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Card::make()->schema([
+                TextInput::make('name')
+                    ->label('Judul aturan'),
                 Select::make('roles_id')
                     ->relationship('role', 'name')
                     ->required(),

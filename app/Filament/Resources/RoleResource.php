@@ -21,6 +21,10 @@ class RoleResource extends Resource
     protected static ?string $model = Roles::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-exclamation';
+    protected static ?int $navigationSort = 5;
+    public static function ShouldRegisterNavigation(): bool{
+        return auth()->user()->role->name == 'superadmin';
+    }
 
     public static function form(Form $form): Form
     {

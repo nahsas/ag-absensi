@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use Filament\Forms;
 use App\Models\Izin;
-use Filament\Forms\Components\Split;
 use Filament\Tables;
 use App\Models\Absen;
 use Filament\Forms\Form;
@@ -14,6 +13,8 @@ use Filament\Resources\Resource;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Card;
 use Filament\Tables\Actions\Action;
+use Filament\Forms\Components\Split;
+use Illuminate\Support\Facades\Http;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
@@ -22,6 +23,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\IzinResource\Pages;
@@ -33,7 +35,11 @@ class IzinResource extends Resource
 {
     protected static ?string $model = Izin::class;
 
+    protected static ?string $navigationLabel = 'Keluar Kantor';
+
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -71,25 +77,17 @@ class IzinResource extends Resource
             ->modifyQueryUsing(fn(Builder $query)=>$query->orderBy('jam_kembali','DESC'))
             ->columns([
                 TextColumn::make('judul')->searchable()->sortable(),
-                TextColumn::make('user.name')->searchable()->sortable(),
-                TextColumn::make('alasan')->limit(50)
-                    ->formatStateUsing(function($state){
-                            $list = explode(',',trim($state, "\[\]\, "));
-                            $res = "<ul>";
-                            foreach($list as $data){
-                                $res = $res."<li>- ".$data."</li>";
-                            }
-                            $res = $res."</ul>";
-                            return $res;
-                        })
-                    ->html(),
+                TextColumn::make('user.name')->searchable()->sortable()
+                    ->label('Nama'),
+                TextColumn::make('alasan')->limit(50),
                 TextColumn::make('absen.tanggal_absen')->dateTime()->label('Waktu Keluar')->sortable(),
+                BooleanColumn::make('approved')->label('Diterima'),
+                TextColumn::make('absen.point')
+                    ->label('Point')
+                    ->suffix(' Point'),
                 TextColumn::make('jam_kembali')->dateTime()->label('Waktu Kembali')->sortable(),
                 TextColumn::make('keluar_selama')->label('Lama Izin')
                     ->suffix(' Menit'),
-                BooleanColumn::make('approved')->label('Kebutuhan kantor'),
-                TextColumn::make('absen.point')
-                    ->suffix(' Point'),
             ])
             ->filters([
                 //

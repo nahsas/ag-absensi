@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('alasan');
             $table->datetime('jam_kembali')->nullable();
             $table->integer('keluar_selama')->default(0);
-            $table->boolean('approved')->default(false);
+            $table->boolean('approved')->nullable(true)->default(null);
             $table->timestamps();
         });
     }

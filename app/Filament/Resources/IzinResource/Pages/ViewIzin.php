@@ -25,24 +25,60 @@ class ViewIzin extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('Termasuk kebutuhan kantor')
+            Action::make('Tolak Izin')
                 ->requiresConfirmation()
                 ->form([
                     TextInput::make('point')
                         ->numeric()
-                        ->maxValue(20)
-                        ->placeholder('Maximal memberikan 20 point')
+                        ->maxValue(0)
+                        ->minValue(-20)
+                        ->placeholder('Maximal memberikan -20 point')
                         ->default(0)
                 ])
-                ->color('success')
-                ->visible(fn($record)=>!$record->approved)
+                ->color('danger')
+                ->visible(fn($record)=>$record->approved==null)
                 ->action(function($record,$data){
                     $absen = Absen::find($record->absen_id);
 
                     if(!$absen){
                         return Notification::make()
                             ->danger()
-                            ->title('Gagal aprrove izin')
+                            ->title('Gagal menolak izin')
+                            ->body('Terjadi sesuatu pada program sehingga gagal untuk menolak izin ini')
+                            ->send();
+                    }
+
+                    $absen->point = $data['point'];
+                    $absen->save();
+
+                    $record->approved = False;
+                    $record->save();
+
+                    return Notification::make()
+                        ->success()
+                        ->title('Izin berhasil di tolak')
+                        ->body('Izin ini berhasil di tolak')
+                        ->send();
+                }),
+            Action::make('Terima Izin')
+                ->requiresConfirmation()
+                ->form([
+                    TextInput::make('point')
+                        ->numeric()
+                        ->maxValue(20)
+                        ->minValue(0)
+                        ->placeholder('Maximal memberikan 20 point')
+                        ->default(0)
+                ])
+                ->color('success')
+                ->visible(fn($record)=>$record->approved==null)
+                ->action(function($record,$data){
+                    $absen = Absen::find($record->absen_id);
+
+                    if(!$absen){
+                        return Notification::make()
+                            ->danger()
+                            ->title('Gagal approve izin')
                             ->body('Terjadi sesuatu pada program sehingga gagal untuk approve izin ini')
                             ->send();
                     }
@@ -81,24 +117,14 @@ class ViewIzin extends ViewRecord
                                 ->time(),
                             IconEntry::make('approved')
                                 ->boolean()
-                                ->label('Kebutuhan kantor')
+                                ->label('Diterima')
                                 ->trueIcon('heroicon-o-check-badge')
                                 ->falseIcon('heroicon-o-x-circle'),
                             TextEntry::make('absen.point')
                                 ->suffix(' Point'),
                         ]),
-                    TextEntry::make('alasan')
-                        ->formatStateUsing(function($state){
-                                $list = explode(',',trim($state, "\[\]\, "));
-                                $res = "<ul>";
-                                foreach($list as $data){
-                                    $res = $res."<li>- ".$data."</li>";
-                                }
-                                $res = $res."</ul>";
-                                return $res;
-                            })
-                        ->html(),            
-                    ]),
+                    TextEntry::make('alasan'),
+                ]),
                 Card::make([
                     ViewEntry::make('')
                         ->view('OnlineImage',fn($record)=>['image'=>$record->bukti_kembali])

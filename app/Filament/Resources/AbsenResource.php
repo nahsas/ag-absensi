@@ -6,7 +6,9 @@ use Filament\Forms;
 use Filament\Tables;
 use App\Models\Absen;
 use Filament\Forms\Form;
+use App\Models\SettingJam;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Card;
 use Filament\Tables\Filters\Filter;
@@ -31,6 +33,8 @@ class AbsenResource extends Resource
     protected static ?string $model = Absen::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+
+    protected static ?int $navigationSort = 1;
 
  
     public static function form(Form $form): Form
@@ -68,7 +72,44 @@ class AbsenResource extends Resource
                     ->label('Tanggal Absen')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('keterangan'),
+                TextColumn::make('keterangan')
+                    ->formatStateUsing(function($record,$state){
+                        $waktu = Carbon::parse($record->tanggal_absen);
+                        $absen_date = Carbon::parse($record->tanggal_absen)->toDate()->format('Y-m-d');
+                        $absen_date_besok = Carbon::parse($record->tanggal_absen)->addDay()->toDate()->format('Y-m-d');
+
+                        $waktuAcuanPagi = "{$absen_date} 06:00:00"; // Asumsi: Acuan tetap jam 8 pagi
+                        $waktuAcuanIstirahat = "{$absen_date} 12:00:00"; // Asumsi: Acuan tetap jam 12 siang
+                        $waktuAcuanKembali = "{$absen_date} 13:00:01"; // Asumsi: Acuan tetap jam 1 siang
+                        $waktuAcuanPulang = "{$absen_date} 17:00:01"; // Asumsi: Acuan tetap jam 5 sore
+                        $waktuAcuanBesok = "{$absen_date_besok} 06:00:00"; // Asumsi: Acuan tetap besok jam 8 sore
+
+                        $res = ucfirst($record->keterangan);
+                        if($record->keterangan == 'hadir'){
+                            switch($waktu){
+                                case $waktu->between($waktuAcuanPagi, $waktuAcuanIstirahat):
+                                    $res = "Absen Pagi";
+                                    break;
+                                case $waktu->between($waktuAcuanIstirahat, $waktuAcuanKembali):
+                                    $res = "Absen Istirahat";
+                                    break;
+                                case $waktu->between($waktuAcuanKembali, $waktuAcuanPulang):
+                                    $res = "Absen Kembali";
+                                    break;
+                                case $waktu->between($waktuAcuanPulang, $waktuAcuanBesok):
+                                    $res = "Absen Pulang";
+                                    break;
+                            }
+                        }
+                        return $res;
+                    })
+                    ->badge()
+                    ->colors([
+                        "success"=>"hadir",
+                        "info"=>"izin",
+                        "primary"=>"sakit",
+                        "danger"=>"tanpa_keterangan",
+                    ]),
                 TextColumn::make('point')
                     ->suffix(' Point')
                     ->sortable()
@@ -76,11 +117,21 @@ class AbsenResource extends Resource
             ])
             ->filters([
                 // Sembunyikan data absensi dengan keterangan 'izin' dan 'dinas_luar'
-                Filter::make('keterangan_filter')
+                Filter::make('filter_hadir')
                     ->query(fn (Builder $query): Builder => 
-                        $query->whereNotIn('keterangan', ['izin', 'dinas_luar'])
+                        $query->whereNotIn('keterangan', ['sakit','izin', 'dinas_luar'])
                     )
-                    ->toggle() // Tambahkan toggle untuk filter
+                    ->toggle(), // Tambahkan toggle untuk filter
+                Filter::make('filter_izin')
+                    ->query(fn (Builder $query): Builder => 
+                        $query->where('keterangan', 'izin')
+                    )
+                    ->toggle(), // Tambahkan toggle untuk filter
+                Filter::make('filter_sakit')
+                    ->query(fn (Builder $query): Builder => 
+                        $query->where('keterangan', 'sakit')
+                    )
+                    ->toggle(), // Tambahkan toggle untuk filter
             ]);
     }
 

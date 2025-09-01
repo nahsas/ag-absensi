@@ -34,6 +34,7 @@ class DinasLuarResource extends Resource
     protected static ?string $model = DinasLuar::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
