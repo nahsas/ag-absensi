@@ -10,6 +10,8 @@ class ListSakits extends ListRecords
 {
     protected static string $resource = SakitResource::class;
 
+    protected static ?string $title = "Daftar Izin";
+
     protected function getHeaderActions(): array
     {
         return [

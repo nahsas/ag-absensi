@@ -21,6 +21,7 @@ use App\Filament\Resources\RolesSettingResource\RelationManagers;
 class RolesSettingResource extends Resource
 {
     protected static ?string $model = RolesSetting::class;
+    protected static ?string $navigationLabel = 'Aturan waktu';
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-8-tooth';
     public static function ShouldRegisterNavigation(): bool{
@@ -65,7 +66,8 @@ class RolesSettingResource extends Resource
         return $table
             ->columns([
                 Split::make([
-                        TextColumn::make('role.name')->sortable(),
+                        TextColumn::make('name')->sortable(),
+                        TextColumn::make('role.name')->sortable()->grow(false),
                         TextColumn::make('jam.nama_jam')->label('Tipe Jam')->sortable()
                             ->grow(false),
                         TextColumn::make('operator')->sortable()

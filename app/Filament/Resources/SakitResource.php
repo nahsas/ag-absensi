@@ -26,6 +26,11 @@ class SakitResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function getBreadcrumb(): string
+    {
+        return 'Izin';
+    }    
+    
     public static function form(Form $form): Form
     {
         return $form

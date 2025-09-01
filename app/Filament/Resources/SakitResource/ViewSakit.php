@@ -23,7 +23,7 @@ use Filament\Infolists\Components\ImageEntry;
 class ViewSakit extends ViewRecord
 {
     protected static string $resource = SakitResource::class;
-
+    protected static ?string $title = "Detail Izin";
     protected function getHeaderActions(): array
     {
         return [
@@ -89,11 +89,10 @@ class ViewSakit extends ViewRecord
         return $infolist->schema([
             Split::make([
                 Card::make([
-                    Grid::make(2)
+                    Grid::make(3)
                         ->schema([
                             TextEntry::make('user.name')
                                 ->label('Nama'),
-                            TextEntry::make('alasan'),
                             IconEntry::make('approved')
                                 ->boolean()
                                 ->label('Disetujui')
@@ -101,22 +100,12 @@ class ViewSakit extends ViewRecord
                                 ->falseIcon('heroicon-o-x-circle'),
                             TextEntry::make('absen.point')
                                 ->suffix(' Point'),
-                        ]),
-                    TextEntry::make('alasan')
-                        ->formatStateUsing(function($state){
-                                $list = explode(',',trim($state, "\[\]\, "));
-                                $res = "<ul>";
-                                foreach($list as $data){
-                                    $res = $res."<li>- ".$data."</li>";
-                                }
-                                $res = $res."</ul>";
-                                return $res;
-                            })
-                        ->html(),            
+                            ]),
+                        TextEntry::make('alasan'),
                     ]),
                 Card::make([
                     ViewEntry::make('')
-                        ->view('OnlineImage',fn($record)=>['image'=>$record->bukti_sakit,'title'=>"Bukti Sakit"])
+                        ->view('OnlineImage',fn($record)=>['image'=>$record->bukti_sakit,'title'=>"Bukti Izin"])
                 ])
             ])
             ->columnSpanFull(),

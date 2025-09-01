@@ -41,6 +41,11 @@ class IzinResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getBreadcrumb(): string
+    {
+        return 'Keluar Kantor';
+    }  
+
     public static function form(Form $form): Form
     {
         return $form->schema([

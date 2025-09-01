@@ -33,6 +33,7 @@ class AbsenResource extends Resource
     protected static ?string $model = Absen::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationLabel = 'Absen';
 
     protected static ?int $navigationSort = 1;
 
