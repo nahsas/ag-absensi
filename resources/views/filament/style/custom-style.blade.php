@@ -1,5 +1,5 @@
-<a href="{{ route('unduh-excel') }}">
+<a href="{{ route('unduh-excel') }}" style="margin:10px">
     <x-filament::button color="primary">
-        Export PDF
+        Export excel
     </x-filament::button>
 </a>

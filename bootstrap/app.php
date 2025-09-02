@@ -21,60 +21,32 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule){
          $schedule->call(function(){
-            $now = Carbon::now();
-            $today = $now->toDateString();
-
-            $settings = SettingJam::all()->keyBy('nama_jam');
-            
-            // Definisikan slot waktu
-            $slots = [
-                'absen_pagi' => ['start' => $settings['Jam masuk']->jam, 'end' => $settings['Jam masuk']->batas_jam],
-                'absen_istirahat' => ['start' => $settings['Istirahat']->jam, 'end' => $settings['Istirahat']->batas_jam],
-                'kembali_istirahat' => ['start' => $settings['Masuk Kembali']->jam, 'end' => $settings['Masuk Kembali']->batas_jam],
-                'absen_pulang' => ['start' => $settings['Pulang']->jam, 'end' => $settings['Pulang']->batas_jam],
-            ];
-
-            foreach ($slots as $slotName => $times) {
-                $startTime = Carbon::parse($today . ' ' . $times['start']);
-                $endTime = Carbon::parse($today . ' ' . $times['end']);
-
-                if ($now->greaterThanOrEqualTo($startTime) && $now->lessThanOrEqualTo($endTime)) {
-                    // Cek user yang sudah absen hari ini
-                    $usersWithAttendance = Absen::whereBetween('tanggal_absen', [$startTime, $endTime])
-                        ->where('keterangan', '!=', 'tanpa_keterangan') // Cek yang bukan tanpa_keterangan
-                        ->pluck('user_id')
-                        ->toArray();
-
-                    // Ambil semua user
-                    $users = User::all();
-
-                    $absencesToCreate = [];
-
-                    // Iterasi setiap user
-                    foreach ($users as $user) {
-                        // Cek apakah user sudah absen
-                        if (!in_array($user->id, $usersWithAttendance)) {
-                            $absencesToCreate[] = [
-                                'id' => (string) \Illuminate\Support\Str::uuid(),
-                                'user_id' => $user->id,
-                                'keterangan' => 'tanpa_keterangan',
-                                'bukti' => null,
-                                'point' => -50,
-                                'tanggal_absen' => $endTime->format('Y-m-d H:i:s'),
-                                'show' => true,
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ];
+            $users = User::all();
+            foreach($users as $user){
+                $times = SettingJam::all()->sortBy('batas_jam')->pluck('batas_jam','jam');
+                foreach($times as $key=>$value){
+                    $batas_absen_bawah = Carbon::now()->setTimeFrom($key)->startOfMinute();
+                    $batas_absen_atas = Carbon::now()->setTimeFrom($value)->startOfMinute();
+                    if(Carbon::now()->startOfMinute() >= $batas_absen_atas){
+                        $checkAbsen = Absen::where('user_id',$user->id)->whereIn('keterangan',["sakit","izin","hadir","tanpa_keterangan","dinas_luar"])->whereBetween('tanggal_absen', [$batas_absen_bawah, $batas_absen_atas])->first();
+                        if(!$checkAbsen){
+                            Absen::create([
+                                'user_id'=>$user->id,
+                                'keterangan'=>'tanpa_keterangan',
+                                'bukti'=>null,
+                                'point'=>-50,
+                                'tanggal_absen'=>$batas_absen_atas,
+                                'show'=>true,
+                            ]);
                         }
-                    }
-
-                    // Masukkan ke database secara massal
-                    if (!empty($absencesToCreate)) {
-                        Absen::insert($absencesToCreate);
+                        echo "\n {$user->name} Alpha \n";
+                    }else{
+                        echo "No checking for this time";
                     }
                 }
+                
             }
-        })->everyMinute(); // Ganti dengan jadwal yang kamu mau
+        })->everyTwoSeconds(); // Ganti dengan jadwal yang kamu mau
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

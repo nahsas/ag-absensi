@@ -62,7 +62,8 @@ class AbsenResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','sakit','izin']))
+            ->defaultSort('tanggal_absen','DESC')
+            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','sakit','izin','tanpa_keterangan']))
             ->columns([
                 
                 TextColumn::make('user.name')
@@ -85,7 +86,7 @@ class AbsenResource extends Resource
                         $waktuAcuanPulang = "{$absen_date} 17:00:01"; // Asumsi: Acuan tetap jam 5 sore
                         $waktuAcuanBesok = "{$absen_date_besok} 06:00:00"; // Asumsi: Acuan tetap besok jam 8 sore
 
-                        $res = ucfirst($record->keterangan);
+                        $res = ucfirst(str_replace('_',' ',$record->keterangan));
                         if($record->keterangan == 'hadir'){
                             switch($waktu){
                                 case $waktu->between($waktuAcuanPagi, $waktuAcuanIstirahat):

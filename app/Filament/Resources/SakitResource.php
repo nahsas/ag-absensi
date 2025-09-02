@@ -48,7 +48,7 @@ class SakitResource extends Resource
                 TextColumn::make('tanggal')
                     ->searchable()
                     ->sortable()
-                    ->label('Tanggal Sakit'),
+                    ->label('Tanggal Izin'),
                 TextColumn::make('alasan')
                     ->label('Alasan'),
                 BooleanColumn::make('approved')->label('Disetujui'),
