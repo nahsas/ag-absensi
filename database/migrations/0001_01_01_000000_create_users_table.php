@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('no_hp')->nullable();
             $table->string('password');
             $table->boolean('isFirstLogin')->default(true);
-            $table->foreignUuid('roles_id')->constrained('roles')->onDelete('set null');
+            $table->foreignUuid('roles_id')->nullable()->constrained('roles')->onDelete('set null');
             $table->timestamps();
         });
 
