@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->string('id')->primary();
             $table->string('name');
             $table->timestamps();
         });
 
         Schema::create('roles_setting', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->string('id')->primary();
             $table->foreignUuid('roles_id')->constrained('roles')->onDelete('cascade');
             $table->string('name');
             $table->foreignUuid('jam_id')->constrained('setting_jams')->onDelete('cascade');

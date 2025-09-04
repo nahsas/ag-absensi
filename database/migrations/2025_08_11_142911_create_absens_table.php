@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('absens', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->string('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-                      $table->enum('keterangan', ['hadir', 'sakit', 'izin', 'tanpa_keterangan', 'dinas_luar']); // Ganti dengan tipe data enum yang sesuai
+            $table->enum('keterangan', ['hadir', 'sakit', 'izin', 'tanpa_keterangan', 'dinas_luar']); // Ganti dengan tipe data enum yang sesuai
             $table->string('bukti')->nullable(); // Menggunakan string untuk menyimpan path file
             $table->integer('point');
             $table->datetime('tanggal_absen');

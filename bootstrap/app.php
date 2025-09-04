@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\NgrokMiddleware;
 use App\Models\User;
 use App\Models\Absen;
 use App\Models\SettingJam;
@@ -17,7 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->web([
+            NgrokMiddleware::class
+        ]);
     })
     ->withSchedule(function (Schedule $schedule){
          $schedule->call(function(){
