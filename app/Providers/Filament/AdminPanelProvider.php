@@ -66,7 +66,7 @@ class AdminPanelProvider extends PanelProvider
 
     public function boot(){
         FilamentView::registerRenderHook(
-            PanelsRenderHook::USER_MENU_PROFILE_AFTER,
+            PanelsRenderHook::PAGE_HEADER_ACTIONS_AFTER,
             fn (): View => view('filament.style.custom-style'),
         );
     }

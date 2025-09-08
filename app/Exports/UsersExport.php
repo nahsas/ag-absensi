@@ -2,120 +2,110 @@
 
 namespace App\Exports;
 
+use Dompdf\Dompdf;
 use App\Models\User;
 use App\Models\Absen;
+use Illuminate\View\View;
 use App\Models\SettingJam;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\FromView;
+use PhpOffice\PhpSpreadsheet\Writer\Pdf;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class UsersExport implements FromCollection, WithHeadings
+class UsersExport implements FromView, ShouldAutoSize
 {
+    protected $users;
+    protected $dateRange;
     protected $startDate;
     protected $endDate;
-    protected $settings;
 
-    public function __construct($month = null)
+    public function __construct($users, $dateRange, $startDate, $endDate)
     {
-        $date = now();
-        if ($month) {
-            $date = $date->month($month);
-        }
-        $this->startDate = $date->startOfMonth()->format('Y-m-d');
-        $this->endDate = $date->endOfMonth()->format('Y-m-d');
-        $this->settings = SettingJam::get()->keyBy('nama_jam');
+        $this->users = $users;
+        $this->dateRange = $dateRange;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
     }
 
-    public function headings(): array
+    public function view(): View
     {
-        return [
-            'Nama',
-            'NIP',
-            'Hari Kerja',
-            'Total Hadir',
-            'Total Sakit',
-            'Total Izin',
-            'Total Tanpa Keterangan',
-            'Total Dinas Luar',
-            'Total Telat Masuk (menit)',
-            'Rata-rata Telat (menit)',
-        ];
+        return view('pdf.rekap_absen', [
+            'users' => $this->users,
+            'dateRange' => $this->dateRange,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+        ]);
     }
 
-    /**
-    * @return \Illuminate\Support\Collection
-    */
-    public function collection()
+    public function exportPdf(Request $request)
     {
-        $users = User::with(['absen' => function ($query) {
-            $query->whereBetween('tanggal_absen', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59']);
+        // Bagian ini sama: Mendapatkan rentang tanggal dari form dan memproses data
+        $startDate = Carbon::parse($request->input('start_date'));
+        $endDate = Carbon::parse($request->input('end_date'));
+        
+        $users = User::with(['absen' => function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('tanggal_absen', [$startDate->startOfDay(), $endDate->endOfDay()]);
         }])->get();
 
-        $exportData = new Collection();
+        $exportData = collect();
+        $dateRange = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->addDay());
 
         foreach ($users as $user) {
-            $absensGroupedByDate = $user->absen->groupBy(function ($absen) {
+            $absensByDate = $user->absen->groupBy(function ($absen) {
                 return Carbon::parse($absen->tanggal_absen)->format('Y-m-d');
             });
 
-            $totalHadir = 0;
-            $totalSakit = 0;
-            $totalIzin = 0;
-            $totalTanpaKeterangan = 0;
-            $totalDinasLuar = 0;
-            $totalLateMinutes = 0;
-            $hadirCount = 0;
-
-            foreach ($absensGroupedByDate as $date => $absens) {
-                $status = $absens->first()->keterangan;
-
-                switch ($status) {
-                    case 'hadir':
-                        $totalHadir++;
-                        $hadirCount++;
-                        // Calculate late minutes for 'hadir' status only
-                        $absenPagi = $absens->firstWhere(function($absen){
-                            return Carbon::parse($absen->tanggal_absen)->format('H:i:s') < ($this->settings['absen_istirahat']->jam ?? '12:00:00');
-                        });
-                        if ($absenPagi && Carbon::parse($absenPagi->tanggal_absen)->format('H:i:s') > ($this->settings['absen_pagi']->jam ?? '08:00:00')) {
-                            $lateMinutes = Carbon::parse($absenPagi->tanggal_absen)->diffInMinutes(Carbon::parse($absenPagi->tanggal_absen)->startOfDay()->addHours(8));
-                            $totalLateMinutes += $lateMinutes;
-                        }
-                        break;
-                    case 'sakit':
-                        $totalSakit++;
-                        break;
-                    case 'izin':
-                        $totalIzin++;
-                        break;
-                    case 'tanpa_keterangan':
-                        $totalTanpaKeterangan++;
-                        break;
-                    case 'dinas_luar':
-                        $totalDinasLuar++;
-                        break;
-                }
-            }
-
-            $totalWorkingDays = $absensGroupedByDate->count();
-            $averageLateMinutes = $hadirCount > 0 ? $totalLateMinutes / $hadirCount : 0;
-
-            $exportData->push([
+            $userData = [
                 'name' => $user->name,
                 'nip' => $user->nip,
-                'total_working_days' => $totalWorkingDays,
-                'total_hadir' => $totalHadir,
-                'total_sakit' => $totalSakit,
-                'total_izin' => $totalIzin,
-                'total_tanpa_keterangan' => $totalTanpaKeterangan,
-                'total_dinas_luar' => $totalDinasLuar,
-                'total_late_minutes' => $totalLateMinutes,
-                'average_late_minutes' => round($averageLateMinutes, 2),
-            ]);
+                'status_by_date' => collect(),
+                'total' => [
+                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0,
+                ]
+            ];
+
+            foreach ($dateRange as $date) {
+                $formattedDate = $date->format('Y-m-d');
+                $status = 'libur'; 
+
+                if ($absensByDate->has($formattedDate)) {
+                    $record = $absensByDate->get($formattedDate)->first();
+                    $status = $record->keterangan;
+                    $userData['total'][$status]++;
+                }
+                $userData['status_by_date']->put($formattedDate, $status);
+            }
+            $exportData->push($userData);
         }
+
+        // --- Bagian ini yang berubah total untuk penggunaan Dompdf langsung ---
         
-        return $exportData;
+        // 1. Render Blade view menjadi string HTML
+        $html = view('pdf.rekap_absen', [
+            'users' => $exportData,
+            'dateRange' => $dateRange,
+            'startDate' => $startDate->format('d F Y'),
+            'endDate' => $endDate->format('d F Y')
+        ])->render();
+
+        // 2. Buat instance Dompdf baru
+        $dompdf = new Dompdf();
+
+        // 3. Muat HTML ke Dompdf
+        $dompdf->loadHtml($html);
+
+        // 4. (Opsional) Atur ukuran kertas
+        $dompdf->setPaper('A4', 'landscape');
+
+        // 5. Render HTML menjadi PDF
+        $dompdf->render();
+
+        // 6. Unduh file PDF
+        return $dompdf->stream('rekap-absen-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf');
     }
 }

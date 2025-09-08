@@ -1,5 +1,4 @@
 <?php
-
 $url = env('API_BASE_URL').$image;
 $path = parse_url($url, PHP_URL_PATH);
 $extension = pathinfo($path, PATHINFO_EXTENSION);

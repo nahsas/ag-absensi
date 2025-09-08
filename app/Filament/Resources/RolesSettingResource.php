@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use Filament\Forms\Components\TimePicker;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Columns\Layout\Split;
@@ -49,9 +50,7 @@ class RolesSettingResource extends Resource
                         '<=' => 'Lebih Kecil Sama Dengan (<=)',
                     ])
                     ->required(),
-                TextInput::make('value') // int4
-                    ->numeric()
-                    ->label('Value (Menit Selisih)')
+                TimePicker::make('value')
                     ->required(),
                 TextInput::make('point') // int4
                     ->numeric()
@@ -77,7 +76,7 @@ class RolesSettingResource extends Resource
                                     case '>':
                                        return 'Lebih Dari';
                                     case '<':
-                                        return 'Kurang Kecil Dari';
+                                        return 'Kurang Dari';
                                     case '=':
                                         return 'Sama Dengan';
                                     case '>=':
@@ -88,8 +87,8 @@ class RolesSettingResource extends Resource
                                         return $state;
                                 }
                             }),
-                        TextColumn::make('value')->label('Selisih')
-                            ->suffix(' Menit'),
+                        TextColumn::make('value')->label('Waktu')
+                            ->time(),
                         TextColumn::make('point')->color(fn (int $state): string => $state < 0 ? 'danger' : 'success')
                             ->suffix(' Point'),
                     ])
