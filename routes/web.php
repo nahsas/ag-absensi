@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ExportPdfController;
 use App\Models\User;
 use App\Exports\UsersExport;
 use Illuminate\Http\Request;
@@ -54,4 +55,4 @@ Route::get('/unduh-excel-range', function(Request $request){
         );
     })->name('unduh-excel-range');
 
-Route::get('/unduh-pdf', [UsersExport::class, 'exportPdf'])->name('unduh-pdf');
+Route::get('/unduh-pdf', [ExportPdfController::class, 'exportPdf'])->name('unduh-pdf');

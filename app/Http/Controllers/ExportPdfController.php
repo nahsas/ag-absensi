@@ -1,40 +1,14 @@
 <?php
 
-namespace App\Exports;
+namespace App\Http\Controllers;
 
 use Dompdf\Dompdf;
 use App\Models\User;
-use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class UsersExport implements FromView, ShouldAutoSize
+class ExportPdfController extends Controller
 {
-    protected $users;
-    protected $dateRange;
-    protected $startDate;
-    protected $endDate;
-
-    public function __construct($users, $dateRange, $startDate, $endDate)
-    {
-        $this->users = $users;
-        $this->dateRange = $dateRange;
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
-    }
-
-    public function view(): View
-    {
-        return view('pdf.rekap_absen', [
-            'users' => $this->users,
-            'dateRange' => $this->dateRange,
-            'startDate' => $this->startDate,
-            'endDate' => $this->endDate,
-        ]);
-    }
-
     public function exportPdf(Request $request)
     {
         // Bagian ini sama: Mendapatkan rentang tanggal dari form dan memproses data

@@ -15,7 +15,7 @@ class NgrokMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $request->headers->set("ngrok-skip-browser-warning","69420");
+        // $request->headers->set("ngrok-skip-browser-warning","69420");
 
         return $next($request);
     }
