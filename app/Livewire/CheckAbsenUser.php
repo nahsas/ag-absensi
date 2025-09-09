@@ -17,37 +17,34 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 class CheckAbsenUser extends BaseWidget
 {
-    protected static ?string $model = Absen::class; // Perbaiki: Gunakan properti statis
+    protected static ?string $model = Absen::class;
     public array|string|int $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
-        // Ambil data jam dari tabel setting_jams
         $pagi = SettingJam::where('nama_jam', 'Jam masuk')->first();
         $istirahat = SettingJam::where('nama_jam', 'Istirahat')->first();
         $kembali = SettingJam::where('nama_jam', 'Masuk kembali')->first();
         $pulang = SettingJam::where('nama_jam', 'Pulang')->first();
 
-        // Pastikan nilai-nilai tersedia, berikan default jika tidak
         $waktuMulaiPagi = $pagi->jam ?? '07:00:00';
         $waktuTutupPagi = $pagi->batas_jam ?? '11:59:59';
-        $waktuAcuanPagi = '08:00:00'; // Asumsi: Acuan tetap jam 8 pagi
+        $waktuAcuanPagi = '08:00:00';
 
         $waktuMulaiIstirahat = $istirahat->jam ?? '12:00:00';
         $waktuTutupIstirahat = $istirahat->batas_jam ?? '13:00:00';
-        $waktuAcuanIstirahat = '12:00:00'; // Asumsi: Acuan tetap jam 12 siang
+        $waktuAcuanIstirahat = '12:00:00';
 
         $waktuMulaiKembali = $kembali->jam ?? '13:00:01';
         $waktuTutupKembali = $kembali->batas_jam ?? '17:00:00';
-        $waktuAcuanKembali = '13:00:01'; // Asumsi: Acuan tetap jam 1 siang
+        $waktuAcuanKembali = '13:00:01';
 
         $waktuMulaiPulang = $pulang->jam ?? '17:00:01';
         $waktuTutupPulang = $pulang->batas_jam ?? '23:59:59';
-        $waktuAcuanPulang = '17:00:01'; // Asumsi: Acuan tetap jam 5 sore
-
+        $waktuAcuanPulang = '17:00:01';
 
         return $table
-            ->query(fn()=>User::query())
+            ->query(fn() => User::query())
             ->modifyQueryUsing(function (Builder $query) use (
                 $waktuMulaiPagi, $waktuTutupPagi, $waktuAcuanPagi,
                 $waktuMulaiIstirahat, $waktuTutupIstirahat, $waktuAcuanIstirahat,
@@ -57,47 +54,47 @@ class CheckAbsenUser extends BaseWidget
                 $query
                     ->join('absens', 'users.id', '=', 'absens.user_id')
                     ->whereDate('absens.tanggal_absen', now()->toDateString())
-                    ->whereIn('absens.keterangan',['hadir','tanpa_keterangan'])
+                    ->whereIn('absens.keterangan', ['hadir','tanpa_keterangan'])
                     ->select([
                         'users.id',
                         'users.name',
-                        // Absen Pagi: Status & Keterangan
-                        DB::raw('MAX(CASE 
-                            WHEN CAST(absens.tanggal_absen AS time) BETWEEN \''.$waktuMulaiPagi.'\' AND \''.$waktuTutupPagi.'\' THEN 
-                                CASE 
-                                    WHEN CAST(absens.tanggal_absen AS time) > \''.$waktuAcuanPagi.'\' 
-                                    THEN \'✓ (\' || ROUND(EXTRACT(EPOCH FROM (absens.tanggal_absen - (absens.tanggal_absen::date + \''.$waktuAcuanPagi.'\'::time))) / 60) || \' menit telat)\'
-                                    ELSE \'✓ (\' || ROUND(EXTRACT(EPOCH FROM ((absens.tanggal_absen::date + \''.$waktuAcuanPagi.'\'::time) - absens.tanggal_absen)) / 60) || \' menit lebih cepat)\'
-                                END
-                            ELSE NULL 
-                        END) AS status_pagi'),
-                        // Absen Istirahat: Status & Keterangan
+                        // Absen Pagi: Status & Keterangan (MySQL)
                         DB::raw('MAX(CASE
-                            WHEN CAST(absens.tanggal_absen AS time) BETWEEN \''.$waktuMulaiIstirahat.'\' AND \''.$waktuTutupIstirahat.'\' THEN
+                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiPagi.'\' AND \''.$waktuTutupPagi.'\' THEN
                                 CASE
-                                    WHEN CAST(absens.tanggal_absen AS time) > \''.$waktuAcuanIstirahat.'\'
-                                    THEN \'✓ (\' || ROUND(EXTRACT(EPOCH FROM (absens.tanggal_absen - (absens.tanggal_absen::date + \''.$waktuAcuanIstirahat.'\'::time))) / 60) || \' menit telat)\'
-                                    ELSE \'✓ (\' || ROUND(EXTRACT(EPOCH FROM ((absens.tanggal_absen::date + \''.$waktuAcuanIstirahat.'\'::time) - absens.tanggal_absen)) / 60) || \' menit lebih cepat)\'
+                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanPagi.'\'
+                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPagi.'\'), absens.tanggal_absen)), \' menit telat)\')
+                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPagi.'\'))), \' menit lebih cepat)\')
+                                END
+                            ELSE NULL
+                        END) AS status_pagi'),
+                        // Absen Istirahat: Status & Keterangan (MySQL)
+                        DB::raw('MAX(CASE
+                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiIstirahat.'\' AND \''.$waktuTutupIstirahat.'\' THEN
+                                CASE
+                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanIstirahat.'\'
+                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanIstirahat.'\'), absens.tanggal_absen)), \' menit telat)\')
+                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanIstirahat.'\'))), \' menit lebih cepat)\')
                                 END
                             ELSE NULL
                         END) AS status_istirahat'),
-                        // Absen Kembali Istirahat: Status & Keterangan
+                        // Absen Kembali Istirahat: Status & Keterangan (MySQL)
                         DB::raw('MAX(CASE
-                            WHEN CAST(absens.tanggal_absen AS time) BETWEEN \''.$waktuMulaiKembali.'\' AND \''.$waktuTutupKembali.'\' THEN
+                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiKembali.'\' AND \''.$waktuTutupKembali.'\' THEN
                                 CASE
-                                    WHEN CAST(absens.tanggal_absen AS time) > \''.$waktuAcuanKembali.'\'
-                                    THEN \'✓ (\' || ROUND(EXTRACT(EPOCH FROM (absens.tanggal_absen - (absens.tanggal_absen::date + \''.$waktuAcuanKembali.'\'::time))) / 60) || \' menit telat)\'
-                                    ELSE \'✓ (\' || ROUND(EXTRACT(EPOCH FROM ((absens.tanggal_absen::date + \''.$waktuAcuanKembali.'\'::time) - absens.tanggal_absen)) / 60) || \' menit lebih cepat)\'
+                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanKembali.'\'
+                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanKembali.'\'), absens.tanggal_absen)), \' menit telat)\')
+                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanKembali.'\'))), \' menit lebih cepat)\')
                                 END
                             ELSE NULL
                         END) AS status_kembali_istirahat'),
-                        // Absen Pulang: Status & Keterangan
+                        // Absen Pulang: Status & Keterangan (MySQL)
                         DB::raw('MAX(CASE
-                            WHEN CAST(absens.tanggal_absen AS time) BETWEEN \''.$waktuMulaiPulang.'\' AND \''.$waktuTutupPulang.'\' THEN
+                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiPulang.'\' AND \''.$waktuTutupPulang.'\' THEN
                                 CASE
-                                    WHEN CAST(absens.tanggal_absen AS time) > \''.$waktuAcuanPulang.'\'
-                                    THEN \'✓ (\' || ROUND(EXTRACT(EPOCH FROM (absens.tanggal_absen - (absens.tanggal_absen::date + \''.$waktuAcuanPulang.'\'::time))) / 60) || \' menit telat)\'
-                                    ELSE \'✓ (\' || ROUND(EXTRACT(EPOCH FROM ((absens.tanggal_absen::date + \''.$waktuAcuanPulang.'\'::time) - absens.tanggal_absen)) / 60) || \' menit lebih cepat)\'
+                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanPulang.'\'
+                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPulang.'\'), absens.tanggal_absen)), \' menit telat)\')
+                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPulang.'\'))), \' menit lebih cepat)\')
                                 END
                             ELSE NULL
                         END) AS status_pulang'),

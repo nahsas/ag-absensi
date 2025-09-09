@@ -87,6 +87,12 @@ class AbsenResource extends Resource
                         $waktuAcuanBesok = "{$absen_date_besok} 06:00:00"; // Asumsi: Acuan tetap besok jam 8 sore
 
                         $res = ucfirst(str_replace('_',' ',$record->keterangan));
+                        if($record->keterangan == 'sakit'){
+                            $res = "Izin";
+                        }
+                        if($record->keterangan == 'izin'){
+                            $res = "Keluar Kantor";
+                        }
                         if($record->keterangan == 'hadir'){
                             switch($waktu){
                                 case $waktu->between($waktuAcuanPagi, $waktuAcuanIstirahat):
