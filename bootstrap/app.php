@@ -49,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
                 
             }
-        })->everyTwoSeconds(); // Ganti dengan jadwal yang kamu mau
+        })->everyFifteenMinutes(); // Ganti dengan jadwal yang kamu mau
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
