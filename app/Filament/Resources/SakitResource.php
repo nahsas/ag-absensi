@@ -42,6 +42,9 @@ class SakitResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                return $query->orderByDesc('tanggal');
+            })
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Nama'),
