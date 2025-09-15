@@ -28,10 +28,8 @@
         <thead>
             <tr>
                 <th>No</th>
+                <th>Nip</th>
                 <th>Nama</th>
-                @foreach($dateRange as $date)
-                    <th>{{ $date->format('d F') }}</th>
-                @endforeach
                 <th>Total Kehadiran</th>
             </tr>
         </thead>
@@ -39,22 +37,8 @@
             @foreach($users as $index => $user)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td style="text-align: left;">{{ $user['name'] }}<br><small>{{ $user['nip'] }}</small></td>
-                    @foreach($dateRange as $date)
-                        @php
-                            $status = $user['status_by_date']->get($date->format('Y-m-d'));
-                            $status_code = '';
-                            switch($status) {
-                                case 'hadir': $status_code = 'v'; break;
-                                case 'izin': $status_code = 'i'; break;
-                                case 'sakit': $status_code = 's'; break;
-                                case 'dinas_luar': $status_code = 'dl'; break;
-                                case 'tanpa_keterangan': $status_code = 't'; break;
-                                default: $status_code = '-'; break; // Libur atau tidak ada data
-                            }
-                        @endphp
-                        <td><span class="{{ $status }}">{{ $status_code }}</span></td>
-                    @endforeach
+                    <td><small>{{ $user['nip'] }}</small></td>
+                    <td style="text-align: left;">{{ $user['name'] }}<br></td>
                     <td>
                         Hadir: {{ $user['total']['hadir'] }}v<br>
                         Izin: {{ $user['total']['izin'] }}i<br>

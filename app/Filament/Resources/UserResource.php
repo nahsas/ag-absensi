@@ -28,6 +28,8 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+    protected static ?string $navigationGroup = 'Manajemen User';
+    protected static ?string $navigationLabel = 'Daftar Warga Perusahaan';
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
@@ -99,7 +101,6 @@ class UserResource extends Resource
                 TextColumn::make('role.name')->sortable(),
                 TextColumn::make('no_hp'),
                 TextColumn::make('alamat')->limit(50)->label('Alamat'), // Menambahkan kolom alamat di sini
-                BooleanColumn::make('isFirstLogin')->label('First Login'),
             ])
             ->filters([
                 //

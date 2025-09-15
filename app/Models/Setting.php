@@ -12,7 +12,9 @@ class Setting extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        "value"
+        "value",
+        "range_start",
+        "range_end",
     ];
 
     protected $casts = [

@@ -35,9 +35,9 @@ class IzinResource extends Resource
 {
     protected static ?string $model = Izin::class;
 
-    protected static ?string $navigationLabel = 'Keluar Kantor';
-
-    protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+    protected static ?string $navigationLabel = 'Daftar Karyawan Keluar Kantor';
+    protected static ?string $navigationGroup = 'Report';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-left-start-on-rectangle';
 
     protected static ?int $navigationSort = 2;
 

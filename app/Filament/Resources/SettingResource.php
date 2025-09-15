@@ -8,13 +8,16 @@ use App\Models\Setting;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\BooleanColumn;
 use App\Filament\Resources\SettingResource\Pages;
@@ -25,7 +28,8 @@ class SettingResource extends Resource
 {
     protected static ?string $model = Setting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-8-tooth';
 
     public static function form(Form $form): Form
     {
@@ -47,6 +51,17 @@ class SettingResource extends Resource
                             ->numeric();
         }
 
+        if($data->type == "range_date"){
+            $editForm[] = Grid::make(2)->schema([
+                DatePicker::make('range_start')
+                    ->label('Dari Tanggal')
+                    ->required(),
+                DatePicker::make('range_end')
+                    ->label('Hingga Tanggal')
+                    ->required(),
+            ])->columnSpan(2);
+        }
+
         return $form
             ->schema($editForm)->columns(1);
     }
@@ -54,9 +69,17 @@ class SettingResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function(Builder $query){
+                return $query->orderBy('display_name','asc')->where('is_hidden', false);
+            })
             ->columns([
-                Split::make([
-                    TextColumn::make('name'),
+                Stack::make([]),
+                    TextColumn::make('display_name'),
+                    TextColumn::make('range_start')
+                        ->formatStateUsing(function ($state,$record) {
+                            // dd($record);
+                            return $state ? $state." Hingga ".$record['range_end'] : '-';
+                        }),
                     TextColumn::make('value')
                         ->formatStateUsing(function ($record, $state) {
                             switch ($record->type) {
@@ -89,12 +112,12 @@ class SettingResource extends Resource
                             }
                         })->html(true)
                 ])
-            ])
             ->filters([
                 //
             ])
             ->actions([
                 EditAction::make()
+                    ->label('Ubah')
             ])
             ->bulkActions([
             ]);

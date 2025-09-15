@@ -23,8 +23,8 @@ class RolesSettingResource extends Resource
 {
     protected static ?string $model = RolesSetting::class;
     protected static ?string $navigationLabel = 'Aturan waktu';
-
-    protected static ?string $navigationIcon = 'heroicon-o-cog-8-tooth';
+    protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
     public static function ShouldRegisterNavigation(): bool{
         return auth()->user()->role->name == 'superadmin';
     }

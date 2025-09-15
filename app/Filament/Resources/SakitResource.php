@@ -20,9 +20,9 @@ class SakitResource extends Resource
 {
     protected static ?string $model = Sakit::class;
 
-    protected static ?string $navigationLabel = 'Izin';
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Report';
+    protected static ?string $navigationLabel = 'Daftar Karyawan Izin';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static ?int $navigationSort = 3;
 
@@ -48,6 +48,8 @@ class SakitResource extends Resource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Nama'),
+                TextColumn::make('code')
+                    ->label('Code Izin'),
                 TextColumn::make('tanggal')
                     ->searchable()
                     ->sortable()

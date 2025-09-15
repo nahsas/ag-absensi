@@ -13,6 +13,7 @@ use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Support\Facades\FilamentView;
+use App\Filament\Widgets\AbsenUserStatistik;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -43,10 +44,16 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
+            ->navigationGroups([
+                'Report',
+                'Manajemen User',
+                'Pengaturan',
+            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 //Widgets\AccountWidget::class,
-                CheckAbsenUser::class
+                // CheckAbsenUser::class
+                AbsenUserStatistik::class
             ])
             ->middleware([
                 EncryptCookies::class,
