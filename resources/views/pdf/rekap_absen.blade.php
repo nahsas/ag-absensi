@@ -30,7 +30,10 @@
                 <th>No</th>
                 <th>Nip</th>
                 <th>Nama</th>
-                <th>Total Kehadiran</th>
+                <th>Masuk</th>
+                <th>Izin</th>
+                <th>Alpha</th>
+                <th>Lembur</th>
             </tr>
         </thead>
         <tbody>
@@ -39,27 +42,13 @@
                     <td>{{ $index + 1 }}</td>
                     <td><small>{{ $user['nip'] }}</small></td>
                     <td style="text-align: left;">{{ $user['name'] }}<br></td>
-                    <td>
-                        Hadir: {{ $user['total']['hadir'] }}v<br>
-                        Izin: {{ $user['total']['izin'] }}i<br>
-                        Sakit: {{ $user['total']['sakit'] }}s<br>
-                        Dinas Luar: {{ $user['total']['dinas_luar'] }}dl<br>
-                        Tanpa Keterangan: {{ $user['total']['tanpa_keterangan'] }}t
-                    </td>
+                    <td>{{ $user['total']['hadir'] }}</td>
+                    <td>{{ $user['total']['sakit'] }}</td>
+                    <td>{{ $user['total']['tanpa_keterangan'] }}</td>
+                    <td>{{ $user['total']['lembur'] }} Jam</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
-
-    <div class="legend">
-        <h2>Keterangan:</h2>
-        <span><b>v</b> = Hadir</span>
-        <span><b>i</b> = Izin</span>
-        <span><b>s</b> = Sakit</span>
-        <span><b>dl</b> = Dinas Luar</span>
-        <span><b>t</b> = Tanpa Keterangan</span>
-        <span><b>-</b> = Libur / Tidak Absen</span>
-    </div>
-
 </body>
 </html>

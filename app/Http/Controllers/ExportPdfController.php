@@ -32,7 +32,7 @@ class ExportPdfController extends Controller
                 'nip' => $user->nip,
                 'status_by_date' => collect(),
                 'total' => [
-                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0,
+                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur' => 0
                 ]
             ];
 
@@ -43,7 +43,11 @@ class ExportPdfController extends Controller
                 if ($absensByDate->has($formattedDate)) {
                     $record = $absensByDate->get($formattedDate)->first();
                     $status = $record->keterangan;
-                    $userData['total'][$status]++;
+                    if($status != 'lembur'){
+                        $userData['total'][$status]++;
+                    }else{
+                        $userData['total']['lembur'] += $record->jam_lembur;
+                    }
                 }
                 $userData['status_by_date']->put($formattedDate, $status);
             }

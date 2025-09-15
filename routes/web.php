@@ -31,7 +31,7 @@ Route::get('/unduh-excel-range', function(Request $request){
                 'nip' => $user->nip,
                 'status_by_date' => collect(),
                 'total' => [
-                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0,
+                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur'=>0
                 ]
             ];
 
@@ -42,7 +42,11 @@ Route::get('/unduh-excel-range', function(Request $request){
                 if ($absensByDate->has($formattedDate)) {
                     $record = $absensByDate->get($formattedDate)->first();
                     $status = $record->keterangan;
-                    $userData['total'][$status]++;
+                    if($status != 'lembur'){
+                        $userData['total'][$status]++;
+                    }else{
+                        $userData['total']['lembur']+=$record->jam_lembur;
+                    }
                 }
                 $userData['status_by_date']->put($formattedDate, $status);
             }
