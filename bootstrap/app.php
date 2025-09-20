@@ -29,7 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 echo "Setting jam pulang tidak ditemukan.";
                 return;
             }
+
             $batasPulang = Carbon::now()->setTimeFrom($settingPulang->batas_jam)->startOfMinute();
+            echo ($batasPulang);
             if (Carbon::now()->startOfMinute() >= $batasPulang) {
                 $users = User::all();
                 foreach ($users as $user) {
@@ -52,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             } else {
                 echo "No checking for this time";
             }
-        })->everyFifteenMinutes(); // Ganti dengan jadwal yang kamu mau
+        })->everyFiveSeconds(); // Ganti dengan jadwal yang kamu mau
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
