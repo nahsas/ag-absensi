@@ -7,6 +7,7 @@ use Filament\Tables;
 use App\Models\Absen;
 use Filament\Forms\Form;
 use App\Models\SettingJam;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Filament\Resources\Resource;
@@ -21,6 +22,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Forms\Components\DateTimePicker;
 use App\Filament\Resources\AbsenResource\Pages;
@@ -64,7 +66,7 @@ class AbsenResource extends Resource
     {
         return $table
             ->defaultSort('tanggal_absen','DESC')
-            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','sakit','izin','tanpa_keterangan']))
+            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','sakit','izin','tanpa_keterangan','lembur']))
             ->columns([
                 
                 TextColumn::make('user.name')
@@ -119,6 +121,16 @@ class AbsenResource extends Resource
                         "primary"=>"sakit",
                         "danger"=>"tanpa_keterangan",
                     ]),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('lembur_start')
+                            ->formatStateUsing(fn($state)=>"Mulai lembur: ".$state),
+                        TextColumn::make('lembur_end')
+                            ->formatStateUsing(fn($state)=>"Selesai lembur: ".$state),
+                        TextColumn::make('jam_lembur')
+                            ->formatStateUsing(fn($state)=>"Lembur selama: ".$state." Jam"),
+                    ])
+                ]),
                 TextColumn::make('point')
                     ->suffix(' Point')
                     ->sortable()

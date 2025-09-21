@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Filament\Notifications\Notification;
 
+// Livewire::setUpdateRoute(function ($handle) {
+    // return Route::post('/absensi/livewire/update', $handle);
+// });
+
 Route::get('/unduh-excel-range', function(Request $request){
         $startDate = Carbon::parse($request->input('start_date'));
         $endDate = Carbon::parse($request->input('end_date'));

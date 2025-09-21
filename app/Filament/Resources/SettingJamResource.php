@@ -44,6 +44,7 @@ class SettingJamResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query)=>$query->orderBy('jam'))
             ->columns([
                 Split::make([
                         TextColumn::make('nama_jam')->searchable(),

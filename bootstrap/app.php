@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\NgrokMiddleware;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Absen;
 use App\Models\SettingJam;
@@ -54,7 +55,26 @@ return Application::configure(basePath: dirname(__DIR__))
             } else {
                 echo "No checking for this time";
             }
-        })->everyFiveSeconds(); // Ganti dengan jadwal yang kamu mau
+        })->everyThirtyMinutes(); // Ganti dengan jadwal yang kamu mau
+    })
+    ->withSchedule(function(Schedule $schedule){
+        $schedule->call(function(){
+            $today = now();
+            $liburPanjangStart = Carbon::parse(Setting::where('name','Libur Panjang')->first()['range_start']);
+            $liburPanjangEnd = Carbon::parse(Setting::where('name','Libur Panjang')->first()['range_end']);
+
+            if (($today->dayOfWeek === 6 || $today->dayOfWeek === 0 ) || ($liburPanjangStart <= $today && $today <= $liburPanjangEnd)) {
+                $setLibur = Setting::where('name','Libur')->first();
+                $setLibur['value']='1';
+                $setLibur->save();
+                echo 'Hari ini adalah libur!';
+            } else {
+                $setLibur = Setting::where('name','Libur')->first();
+                $setLibur['value']='0';
+                $setLibur->save();
+                echo 'Hari ini bukan libur.';
+            }
+        })->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
