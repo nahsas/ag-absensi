@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Card;
+use Filament\Forms\Components\Grid;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -36,14 +37,21 @@ class UserResource extends Resource
     {
         return $form->schema([
             Card::make()->schema([
-                TextInput::make('nip')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(10),
-                TextInput::make('nik')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(16),
+                Grid::make(3)
+                    ->schema([
+                        TextInput::make('nip')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(10),
+                        TextInput::make('nik')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(16),
+                        TextInput::make('position')
+                            ->label('Posisi pekerjaan')
+                            ->required()
+                            ->maxLength(50),
+                    ]),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -65,6 +73,7 @@ class UserResource extends Resource
                             $query->whereNotIn('name', ['admin', 'superadmin']) : 
                             $query
                     )
+                    ->label('Jabatan')
                     ->required()
                     // Field ini dinonaktifkan untuk admin (bukan superadmin) saat mengedit
                     ->disabled(

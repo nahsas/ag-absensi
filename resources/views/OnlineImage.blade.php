@@ -16,8 +16,8 @@ $extension = pathinfo($path, PATHINFO_EXTENSION);
         </object>
     </div>
 @else
-    <div class="shimmer" id="shimmer-container" style="width:100%; height: auto; min-height: 200px;">
-    </div>
+    <!-- <div class="shimmer" id="shimmer-container" style="width:100%; height: auto; min-height: 200px;">
+    </div> -->
     <img src="{{ $image }}" 
              alt="" 
              style="display:none; width: 100%;" 

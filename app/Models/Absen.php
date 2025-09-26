@@ -30,4 +30,8 @@ class Absen extends Model
     {
         return $this->hasOne(Izin::class,'absen_id','id');
     }
+    public function sakit()
+    {
+        return $this->hasOne(Sakit::class,'absen_id','id');
+    }
 }

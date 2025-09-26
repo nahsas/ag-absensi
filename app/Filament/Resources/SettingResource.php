@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use Filament\Forms\Components\TimePicker;
 use Filament\Tables;
 use App\Models\Setting;
 use Filament\Forms\Form;
@@ -45,10 +46,15 @@ class SettingResource extends Resource
                             ->inline(false);
         }
 
-        if($data->type == 'int'){
+        if($data->type == 'int' || $data->type == 'float'){
             $editForm[] = TextInput::make('value')
                             ->required()
                             ->numeric();
+        }
+
+        if($data->type == 'time'){
+            $editForm[] = TimePicker::make('value')
+                            ->required();
         }
 
         if($data->type == "range_date"){
@@ -98,13 +104,13 @@ class SettingResource extends Resource
                                 case 'NULL':
                                     return "<span style='color: grey;'>Data: <i>Tidak Ada</i></span>";
 
-                                case 'array':
+                                case 'time':
                                     // Gunakan var_export untuk representasi array yang bisa dibaca
-                                    return "<span style='color: purple;'>Array: <b>" . var_export($state, true) . "</b></span>";
+                                    return "<span style='color: purple;'>Waktu: <b>" . $state . "</b></span>";
 
-                                case 'object':
+                                case 'float':
                                     // Tampilkan nama class dari objek
-                                    return "<span style='color: orange;'>Objek dari kelas: <b>" . get_class($state) . "</b></span>";
+                                    return "<span style='color: orange;'>Desimal: <b>" . $state . "</b></span>";
 
                                 default:
                                     // Tangani semua tipe data lain

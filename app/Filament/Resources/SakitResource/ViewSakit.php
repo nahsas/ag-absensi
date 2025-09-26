@@ -91,6 +91,9 @@ class ViewSakit extends ViewRecord
                 Card::make([
                     Grid::make(3)
                         ->schema([
+                            TextEntry::make('code')
+                                ->label('Kode'),
+                            TextEntry::make('alasan'),
                             TextEntry::make('user.name')
                                 ->label('Nama'),
                             IconEntry::make('approved')
@@ -98,10 +101,9 @@ class ViewSakit extends ViewRecord
                                 ->label('Disetujui')
                                 ->trueIcon('heroicon-o-check-badge')
                                 ->falseIcon('heroicon-o-x-circle'),
-                            TextEntry::make('absen.point')
-                                ->suffix(' Point'),
-                            ]),
-                        TextEntry::make('alasan'),
+                            TextEntry::make('tanggal')
+                                ->date(),
+                        ]),
                     ]),
                 Card::make([
                     ViewEntry::make('')
