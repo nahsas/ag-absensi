@@ -25,37 +25,25 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule) {
         $schedule->call(function () {
-            $settingPulang = SettingJam::where('nama_jam', 'Pulang')->first();
-            if (!$settingPulang) {
-                echo "Setting jam pulang tidak ditemukan.";
-                return;
-            }
-
-            $batasPulang = Carbon::now()->setTimeFrom($settingPulang->batas_jam)->startOfMinute();
-            echo ($batasPulang);
-            if (Carbon::now()->startOfMinute() >= $batasPulang) {
-                $users = User::all();
-                foreach ($users as $user) {
-                    // Cek apakah user sudah absen apapun hari ini
-                    $sudahAbsen = Absen::where('user_id', $user->id)
-                        ->whereDate('tanggal_absen', Carbon::now()->toDateString())
-                        ->exists();
-                    if (!$sudahAbsen) {
+            $checkJam = now()->dayOfWeek != 6 ? Carbon::now()->setTimeFromTimeString(Setting::where('name','normal_alpha_time')->first()->value) : Carbon::now()->setTimeFromTimeString(Setting::where('name','saturday_alpha_time')->first()->value);
+            if (strtotime('now')>=strtotime($checkJam->toDateTimeString())){
+                $absen_user_ids = Absen::query()->whereBetween('created_at', [now()->startOfDay(), now()->endOfDay()])->pluck('user_id');
+                $users = User::whereNotIn('id',$absen_user_ids)->get();
+                foreach($users as $user){
+                    if (!Absen::where('user_id', $user->id)->whereBetween('created_at',[now()->startOfDay(), now()->endOfDay()])->first())
+                    {
                         Absen::create([
-                            'user_id' => $user->id,
-                            'keterangan' => 'tanpa_keterangan',
-                            'bukti' => null,
-                            'point' => -50,
-                            'tanggal_absen' => $batasPulang,
-                            'show' => true,
+                            "user_id"=>$user->id,
+                            "keterangan"=>'tanpa_keterangan',
+                            "created_at"=>now()
                         ]);
-                        echo "\n {$user->name} Alpha \n";
+                        echo '\n '.$user->name." Alpha \n";
+                    }else{
+                        echo 'Skip';
                     }
                 }
-            } else {
-                echo "No checking for this time";
             }
-        })->everyThirtyMinutes(); // Ganti dengan jadwal yang kamu mau
+        })->everyFifteenMinutes(); // Ganti dengan jadwal yang kamu mau
     })
     ->withSchedule(function(Schedule $schedule){
         $schedule->call(function(){
@@ -63,7 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             $liburPanjangStart = Carbon::parse(Setting::where('name','Libur Panjang')->first()['range_start']);
             $liburPanjangEnd = Carbon::parse(Setting::where('name','Libur Panjang')->first()['range_end']);
 
-            if (($today->dayOfWeek === 6 || $today->dayOfWeek === 0 ) || ($liburPanjangStart <= $today && $today <= $liburPanjangEnd)) {
+            if (($today->dayOfWeek === 0 ) || ($liburPanjangStart <= $today && $today <= $liburPanjangEnd)) {
                 $setLibur = Setting::where('name','Libur')->first();
                 $setLibur['value']='1';
                 $setLibur->save();

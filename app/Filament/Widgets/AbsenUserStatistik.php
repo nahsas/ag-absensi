@@ -48,10 +48,27 @@ protected static ?string $model = Absen::class;
 
         return $table
             ->query(fn() => Absen::query())
-            ->modifyQueryUsing(fn($query)=>$query->where([['keterangan','hadir'],['created_at','>=',now()->startOfDay()],['created_at','<=',now()->endOfDay()]]))
+            ->modifyQueryUsing(fn($query)=>$query->whereIn('keterangan',['tanpa_keterangan','hadir'])->where([['created_at','>=',now()->startOfDay()],['created_at','<=',now()->endOfDay()]]))
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')->date()->label('Tanggal'),
                 Tables\Columns\TextColumn::make('user.name')->label('Nama Pengguna'),
+                Tables\Columns\TextColumn::make('keterangan')->label('Keterangan')
+                    ->formatStateUsing(fn($state)=>ucfirst(str_replace('_',' ',$state)))
+                    ->badge()
+                    ->color(function($state){
+                        switch ($state){
+                            case 'hadir':
+                                return 'success';
+                            case 'izin':
+                                return 'warning';
+                            case 'keluar_kantor':
+                                return 'warning';
+                            case 'dinas_luar':
+                                return 'primary';
+                            case 'tanpa_keterangan':
+                                return 'danger';
+                        }
+                    }),
                 Tables\Columns\TextColumn::make('pagi')->label('Absen Pagi')
                     ->badge()
                     ->time()

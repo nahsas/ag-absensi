@@ -59,7 +59,7 @@ class ViewAbsen extends ViewRecord
         return $infolist
             ->schema([
                 Grid::make(1)->schema([
-                    Card::make(fn($record)=>"Detail ".str_replace('_',' ',$record->keterangan).' '.Carbon::parse($record->created_at)->format('i M Y'))->schema([
+                    Card::make(fn($record)=>"Detail ".str_replace('_',' ',$record->keterangan).' '.Carbon::parse($record->created_at)->format('d M Y'))->schema([
                         Grid::make(3)
                             ->schema([
                                     TextEntry::make('user.name')
