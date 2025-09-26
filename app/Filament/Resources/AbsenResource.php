@@ -63,97 +63,55 @@ class AbsenResource extends Resource
 
 
     public static function table(Table $table): Table
-    {
-        return $table
-            ->defaultSort('tanggal_absen','DESC')
-            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','sakit','izin','tanpa_keterangan','lembur']))
-            ->columns([
-                
-                TextColumn::make('user.name')
-                    ->label('Nama')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('tanggal_absen')
-                    ->label('Tanggal Absen')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('keterangan')
-                    ->formatStateUsing(function($record,$state){
-                        $waktu = Carbon::parse($record->tanggal_absen);
-                        $absen_date = Carbon::parse($record->tanggal_absen)->toDate()->format('Y-m-d');
-                        $absen_date_besok = Carbon::parse($record->tanggal_absen)->addDay()->toDate()->format('Y-m-d');
+    { 
 
-                        $waktuAcuanPagi = "{$absen_date} 06:00:00"; // Asumsi: Acuan tetap jam 8 pagi
-                        $waktuAcuanIstirahat = "{$absen_date} 12:00:00"; // Asumsi: Acuan tetap jam 12 siang
-                        $waktuAcuanKembali = "{$absen_date} 13:00:01"; // Asumsi: Acuan tetap jam 1 siang
-                        $waktuAcuanPulang = "{$absen_date} 17:00:01"; // Asumsi: Acuan tetap jam 5 sore
-                        $waktuAcuanBesok = "{$absen_date_besok} 06:00:00"; // Asumsi: Acuan tetap besok jam 8 sore
-
-                        $res = ucfirst(str_replace('_',' ',$record->keterangan));
-                        if($record->keterangan == 'sakit'){
-                            $res = "Izin";
-                        }
-                        if($record->keterangan == 'izin'){
-                            $res = "Keluar Kantor";
-                        }
-                        if($record->keterangan == 'hadir'){
-                            switch($waktu){
-                                case $waktu->between($waktuAcuanPagi, $waktuAcuanIstirahat):
-                                    $res = "Absen Pagi";
-                                    break;
-                                case $waktu->between($waktuAcuanIstirahat, $waktuAcuanKembali):
-                                    $res = "Absen Istirahat";
-                                    break;
-                                case $waktu->between($waktuAcuanKembali, $waktuAcuanPulang):
-                                    $res = "Absen Kembali";
-                                    break;
-                                case $waktu->between($waktuAcuanPulang, $waktuAcuanBesok):
-                                    $res = "Absen Pulang";
-                                    break;
-                            }
-                        }
-                        return $res;
-                    })
+        $schema = [
+                "tanggal_absen"=>TextColumn::make('created_at')
+                    ->date()
+                    ->label('Tanggal Absen'),
+                "user_name"=>TextColumn::make('user.name'),
+                "keterangan"=>TextColumn::make('keterangan')
+                    ->formatStateUsing(fn($state)=>ucfirst(str_replace('_',' ',$state)))
                     ->badge()
-                    ->colors([
-                        "success"=>"hadir",
-                        "info"=>"izin",
-                        "primary"=>"sakit",
-                        "danger"=>"tanpa_keterangan",
-                    ]),
-                Split::make([
-                    Stack::make([
-                        TextColumn::make('lembur_start')
-                            ->formatStateUsing(fn($state)=>"Mulai lembur: ".$state),
-                        TextColumn::make('lembur_end')
-                            ->formatStateUsing(fn($state)=>"Selesai lembur: ".$state),
-                        TextColumn::make('jam_lembur')
-                            ->formatStateUsing(fn($state)=>"Lembur selama: ".$state." Jam"),
-                    ])
-                ]),
-                TextColumn::make('point')
-                    ->suffix(' Point')
-                    ->sortable()
-                    ->color(fn (int $state): string => $state < 0 ? 'danger' : 'success'),
-            ])
-            ->filters([
-                // Sembunyikan data absensi dengan keterangan 'izin' dan 'dinas_luar'
-                Filter::make('filter_hadir')
-                    ->query(fn (Builder $query): Builder => 
-                        $query->whereNotIn('keterangan', ['sakit','izin', 'dinas_luar'])
-                    )
-                    ->toggle(), // Tambahkan toggle untuk filter
-                Filter::make('filter_izin')
-                    ->query(fn (Builder $query): Builder => 
-                        $query->where('keterangan', 'izin')
-                    )
-                    ->toggle(), // Tambahkan toggle untuk filter
-                Filter::make('filter_sakit')
-                    ->query(fn (Builder $query): Builder => 
-                        $query->where('keterangan', 'sakit')
-                    )
-                    ->toggle(), // Tambahkan toggle untuk filter
-            ]);
+                    ->color(function($state){
+                        switch ($state){
+                            case 'hadir':
+                                return 'success';
+                            case 'izin':
+                                return 'warning';
+                            case 'keluar_kantor':
+                                return 'warning';
+                            case 'dinas_luar':
+                                return 'primary';
+                            case 'tanpa_keterangan':
+                                return 'danger';
+                        }
+                    }),
+                "absen_pagi"=>TextColumn::make('pagi')
+                    ->time()
+                    ->color('success')
+                    ->badge(),
+                "absen_istirahat"=>TextColumn::make('istirahat')
+                    ->time()
+                    ->color('success')
+                    ->badge(),
+                "absen_kembali_kerja"=>TextColumn::make('kembali_kerja')
+                    ->time()
+                    ->color('success')
+                    ->badge(),
+                "absen_pulang"=>TextColumn::make('pulang')
+                    ->time()
+                    ->color('success')
+                    ->badge(),
+            ];
+        
+        $split = ["split"=>Split::make($schema)];
+
+        return $table
+            ->defaultSort('created_at','DESC')
+            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','keluar_kantor','izin','tanpa_keterangan','lembur']))
+            ->columns($split)
+            ->filters([]);
     }
 
 

@@ -25,9 +25,10 @@ class RolesSettingResource extends Resource
     protected static ?string $navigationLabel = 'Aturan waktu';
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
-    public static function ShouldRegisterNavigation(): bool{
-        return auth()->user()->role->name == 'superadmin';
-    }
+    protected static bool $shouldRegisterNavigation = false;
+    // public static function ShouldRegisterNavigation(): bool{
+    //     return auth()->user()->role->name == 'superadmin';
+    // }
 
     public static function form(Form $form): Form
     {

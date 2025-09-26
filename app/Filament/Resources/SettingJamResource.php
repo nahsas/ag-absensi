@@ -24,11 +24,13 @@ class SettingJamResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';
     protected static ?int $navigationSort = 6;
+
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationLabel = 'List Jam Kerja';
-    public static function ShouldRegisterNavigation(): bool{
-        return auth()->user()->role->name == 'superadmin';
-    }
+    // public static function ShouldRegisterNavigation(): bool{
+    //     return auth()->user()->role->name == 'superadmin';
+    // }
 
     public static function form(Form $form): Form
     {

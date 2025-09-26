@@ -47,89 +47,35 @@ protected static ?string $model = Absen::class;
         $waktuAcuanPulang = Setting::where('name','jam_pulang_relatif')->first()->value ?? '17:00:00';
 
         return $table
-            ->query(fn() => User::query())
-            ->modifyQueryUsing(function (Builder $query) use (
-                $waktuMulaiPagi, $waktuTutupPagi, $waktuAcuanPagi,
-                $waktuMulaiIstirahat, $waktuTutupIstirahat, $waktuAcuanIstirahat,
-                $waktuMulaiKembali, $waktuTutupKembali, $waktuAcuanKembali,
-                $waktuMulaiPulang, $waktuTutupPulang, $waktuAcuanPulang
-            ) {
-                $query
-                    ->join('absens', 'users.id', '=', 'absens.user_id')
-                    ->whereDate('absens.tanggal_absen', now()->toDateString())
-                    ->whereIn('absens.keterangan', ['hadir','tanpa_keterangan'])
-                    ->select([
-                        'users.id',
-                        'users.name',
-                        // Absen Pagi: Status & Keterangan (MySQL)
-                        DB::raw('MAX(CASE
-                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiPagi.'\' AND \''.$waktuTutupPagi.'\' THEN
-                                CASE
-                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanPagi.'\'
-                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPagi.'\'), absens.tanggal_absen)), \' menit telat)\')
-                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPagi.'\'))), \' menit lebih cepat)\')
-                                END
-                                WHEN absens.keterangan = \'tanpa_keterangan\' THEN CONCAT(\'Alpha\')
-                            ELSE NULL
-                        END) AS status_pagi'),
-                        // Absen Istirahat: Status & Keterangan (MySQL)
-                        DB::raw('MAX(CASE
-                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiIstirahat.'\' AND \''.$waktuTutupIstirahat.'\' THEN
-                                CASE
-                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanIstirahat.'\'
-                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanIstirahat.'\'), absens.tanggal_absen)), \' menit telat)\')
-                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanIstirahat.'\'))), \' menit lebih cepat)\')
-                                END
-                                WHEN absens.keterangan = \'tanpa_keterangan\' THEN CONCAT(\'Alpha\')
-                            ELSE NULL
-                        END) AS status_istirahat'),
-                        // Absen Kembali Istirahat: Status & Keterangan (MySQL)
-                        DB::raw('MAX(CASE
-                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiKembali.'\' AND \''.$waktuTutupKembali.'\' THEN
-                                CASE
-                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanKembali.'\'
-                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanKembali.'\'), absens.tanggal_absen)), \' menit telat)\')
-                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanKembali.'\'))), \' menit lebih cepat)\')
-                                END
-                                WHEN absens.keterangan = \'tanpa_keterangan\' THEN CONCAT(\'Alpha\')
-                            ELSE NULL
-                        END) AS status_kembali_istirahat'),
-                        // Absen Pulang: Status & Keterangan (MySQL)
-                        DB::raw('MAX(CASE
-                            WHEN TIME(absens.tanggal_absen) BETWEEN \''.$waktuMulaiPulang.'\' AND \''.$waktuTutupPulang.'\' THEN
-                                CASE
-                                    WHEN TIME(absens.tanggal_absen) > \''.$waktuAcuanPulang.'\'
-                                    THEN CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPulang.'\'), absens.tanggal_absen)), \' menit telat)\')
-                                    ELSE CONCAT(\'✓ (\', ROUND(TIMESTAMPDIFF(MINUTE, absens.tanggal_absen, CONCAT(DATE(absens.tanggal_absen), \' \', \''.$waktuAcuanPulang.'\'))), \' menit lebih cepat)\')
-                                END
-                                WHEN absens.keterangan = \'tanpa_keterangan\' THEN CONCAT(\'Alpha\')
-                            ELSE NULL
-                        END) AS status_pulang'),
-                    ])
-                    ->groupBy('users.id', 'users.name');
-            })
+            ->query(fn() => Absen::query())
+            ->modifyQueryUsing(fn($query)=>$query->where([['keterangan','hadir'],['created_at','>=',now()->startOfDay()],['created_at','<=',now()->endOfDay()]]))
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Nama Pengguna'),
-                Tables\Columns\TextColumn::make('status_pagi')->label('Absen Pagi')
+                Tables\Columns\TextColumn::make('created_at')->date()->label('Tanggal'),
+                Tables\Columns\TextColumn::make('user.name')->label('Nama Pengguna'),
+                Tables\Columns\TextColumn::make('pagi')->label('Absen Pagi')
                     ->badge()
+                    ->time()
                     ->colors([
                         "danger"=>"Alpha"
                     ])
                     ->grow(false),
-                Tables\Columns\TextColumn::make('status_istirahat')->label('Istirahat')
+                Tables\Columns\TextColumn::make('istirahat')->label('Istirahat')
                     ->badge()
+                    ->time()
                     ->colors([
                         "danger"=>"Alpha"
                     ])
                     ->grow(false),
-                Tables\Columns\TextColumn::make('status_kembali_istirahat')->label('Kembali')
+                Tables\Columns\TextColumn::make('kembali_kerja')->label('Kembali')
                     ->badge()
+                    ->time()
                     ->colors([
                         "danger"=>"Alpha"
                     ])
                     ->grow(false),
-                Tables\Columns\TextColumn::make('status_pulang')->label('Pulang')
+                Tables\Columns\TextColumn::make('pulang')->label('Pulang')
                     ->badge()
+                    ->time()
                     ->colors([
                         "danger"=>"Alpha"
                     ])
