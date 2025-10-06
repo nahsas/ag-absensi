@@ -6,6 +6,7 @@ use Dompdf\Dompdf;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Filament\Notifications\Notification;
 
 class ExportPdfController extends Controller
 {
@@ -14,9 +15,20 @@ class ExportPdfController extends Controller
         // Bagian ini sama: Mendapatkan rentang tanggal dari form dan memproses data
         $startDate = Carbon::parse($request->input('start_date'));
         $endDate = Carbon::parse($request->input('end_date'));
+
+        if ($endDate < $startDate)
+        {
+            Notification::make('Absen tidak valid')
+                ->send()
+                ->danger()
+                ->title('Tanggal Absen Tidak Valid')
+                ->body('Pastikan tanggal mulai lebih kecil dari batas tanggal')
+                ->send();
+            return redirect()->route('filament.admin.pages.dashboard');
+        }
         
         $users = User::with(['absen' => function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('tanggal_absen', [$startDate->startOfDay(), $endDate->endOfDay()]);
+            $query->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
         }])->get();
 
         $exportData = collect();
@@ -24,7 +36,7 @@ class ExportPdfController extends Controller
 
         foreach ($users as $user) {
             $absensByDate = $user->absen->groupBy(function ($absen) {
-                return Carbon::parse($absen->tanggal_absen)->format('Y-m-d');
+                return Carbon::parse($absen->created_at)->format('Y-m-d');
             });
 
             $userData = [
@@ -32,7 +44,7 @@ class ExportPdfController extends Controller
                 'nip' => $user->nip,
                 'status_by_date' => collect(),
                 'total' => [
-                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur' => 0
+                    'hadir' => 0, 'izin' => 0, 'keluar_kantor' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur' => 0
                 ]
             ];
 
@@ -43,7 +55,7 @@ class ExportPdfController extends Controller
                 if ($absensByDate->has($formattedDate)) {
                     $record = $absensByDate->get($formattedDate)->first();
                     $status = $record->keterangan;
-                    if($status != 'lembur'){
+                    if($record->selesai_lembur == null){
                         $userData['total'][$status]++;
                     }else{
                         $userData['total']['lembur'] += $record->jam_lembur;

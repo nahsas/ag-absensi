@@ -41,6 +41,7 @@ class UserResource extends Resource
                     ->schema([
                         TextInput::make('nip')
                             ->required()
+                            ->minLength(6)
                             ->unique(ignoreRecord: true)
                             ->maxLength(10),
                         TextInput::make('nik')
@@ -84,6 +85,7 @@ class UserResource extends Resource
                 TextInput::make('password')
                     ->label('Password Awal')
                     ->password()
+                    ->minLength(8)
                     ->revealable()
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->default(fn (): string => Str::random(8))
@@ -94,6 +96,7 @@ class UserResource extends Resource
                     ->label('Ubah Password')
                     ->password()
                     ->revealable()
+                    ->minLength(8)
                     ->required(false)
                     ->dehydrateStateUsing(fn (?string $state): string => Hash::make($state))
                     ->visible(fn (string $operation): bool => $operation === 'edit' && auth()->user()->isSuperAdmin()),

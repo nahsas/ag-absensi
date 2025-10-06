@@ -35,7 +35,7 @@ class ViewSakit extends ViewRecord
                     $absen = Absen::find($record->absen_id);
 
                     $date = $record->tanggal;
-                    $absen_to_remove = Absen::whereBetween('tanggal_absen',[Carbon::parse($date)->startOfDay(), Carbon::parse($date)->endOfDay()])->where('user_id',$record->user_id)->where('keterangan','tanpa_keterangan')->get();
+                    $absen_to_remove = Absen::whereBetween('created_at',[Carbon::parse($date)->startOfDay(), Carbon::parse($date)->endOfDay()])->where('user_id',$record->user_id)->where('keterangan','tanpa_keterangan')->get();
 
                     if(!$absen){
                         return Notification::make()

@@ -44,9 +44,13 @@ class LembutResource extends Resource
                     DatePicker::make('start_date')
                         ->required()
                         ->label('Tanggal Mulai')
+                        ->reactive()
+                        ->afterStateUpdated(fn($get, $set)=>$get('end_date')<=$get('start_date')?$set('start_date', now()->toDateString()):true)
                         ->default(now()->toDateString()),
                     DatePicker::make('end_date')
                         ->required()
+                        ->reactive()
+                        ->afterStateUpdated(fn($get, $set)=>$get('end_date')<=$get('start_date')?$set('end_date', now()->toDateString()):true)
                         ->label('Tanggal Selesai')
                         ->default(now()->toDateString()),
                 ]),

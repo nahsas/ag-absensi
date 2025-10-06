@@ -1,14 +1,16 @@
 <?php
 
-use App\Http\Controllers\ExportPdfController;
 use App\Models\User;
 use App\Exports\UsersExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Filament\Notifications\Notification;
+use App\Http\Controllers\ExportPdfController;
+
 
 // Livewire::setUpdateRoute(function ($handle) {
     // return Route::post('/absensi/livewire/update', $handle);
@@ -19,7 +21,7 @@ Route::get('/unduh-excel-range', function(Request $request){
         $endDate = Carbon::parse($request->input('end_date'));
 
         $users = User::with(['absen' => function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('tanggal_absen', [$startDate->startOfDay(), $endDate->endOfDay()]);
+            $query->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()]);
         }])->get();
 
         $exportData = collect();
@@ -27,7 +29,7 @@ Route::get('/unduh-excel-range', function(Request $request){
 
         foreach ($users as $user) {
             $absensByDate = $user->absen->groupBy(function ($absen) {
-                return Carbon::parse($absen->tanggal_absen)->format('Y-m-d');
+                return Carbon::parse($absen->created_at)->format('Y-m-d');
             });
 
             $userData = [
@@ -35,7 +37,7 @@ Route::get('/unduh-excel-range', function(Request $request){
                 'nip' => $user->nip,
                 'status_by_date' => collect(),
                 'total' => [
-                    'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur'=>0
+                    'hadir' => 0, 'izin' => 0, 'keluar_kantor' => 0, 'tanpa_keterangan' => 0, 'dinas_luar' => 0, 'lembur' => 0
                 ]
             ];
 
@@ -46,10 +48,10 @@ Route::get('/unduh-excel-range', function(Request $request){
                 if ($absensByDate->has($formattedDate)) {
                     $record = $absensByDate->get($formattedDate)->first();
                     $status = $record->keterangan;
-                    if($status != 'lembur'){
+                    if($record->selesai_lembur == null){
                         $userData['total'][$status]++;
                     }else{
-                        $userData['total']['lembur']+=$record->jam_lembur;
+                        $userData['total']['lembur'] += $record->jam_lembur;
                     }
                 }
                 $userData['status_by_date']->put($formattedDate, $status);

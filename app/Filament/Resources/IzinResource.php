@@ -85,13 +85,10 @@ class IzinResource extends Resource
                 TextColumn::make('user.name')->searchable()->sortable()
                     ->label('Nama'),
                 TextColumn::make('alasan')->limit(50),
-                TextColumn::make('absen.tanggal_absen')->dateTime()->label('Waktu Keluar')->sortable(),
-                BooleanColumn::make('approved')->label('Diterima'),
-                TextColumn::make('absen.point')
-                    ->label('Point')
-                    ->suffix(' Point'),
+                TextColumn::make('tanggal_izin')->dateTime()->label('Waktu Keluar')->sortable(),
                 TextColumn::make('jam_kembali')->dateTime()->label('Waktu Kembali')->sortable(),
                 TextColumn::make('keluar_selama')->label('Lama Izin')
+                    ->formatStateUsing(fn($state)=>$state*60)
                     ->suffix(' Menit'),
             ])
             ->filters([

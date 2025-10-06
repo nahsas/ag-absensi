@@ -43,7 +43,7 @@ class SakitResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query): Builder {
-                return $query->orderByDesc('tanggal');
+                return $query->orderByDesc('created_at');
             })
             ->columns([
                 TextColumn::make('user.name')
@@ -56,6 +56,8 @@ class SakitResource extends Resource
                     ->label('Tanggal Izin'),
                 TextColumn::make('alasan')
                     ->label('Alasan'),
+                TextColumn::make('created_at'),
+
                 BooleanColumn::make('approved')->label('Disetujui'),
             ])
             ->filters([

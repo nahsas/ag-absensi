@@ -69,7 +69,7 @@ class AbsenResource extends Resource
                 "tanggal_absen"=>TextColumn::make('created_at')
                     ->date()
                     ->label('Tanggal Absen'),
-                "user_name"=>TextColumn::make('user.name'),
+                "user_name"=>TextColumn::make('user.name')->searchable(),
                 "keterangan"=>TextColumn::make('keterangan')
                     ->formatStateUsing(fn($state)=>ucfirst(str_replace('_',' ',$state)))
                     ->badge()
@@ -109,7 +109,7 @@ class AbsenResource extends Resource
 
         return $table
             ->defaultSort('created_at','DESC')
-            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','keluar_kantor','izin','tanpa_keterangan','lembur']))
+            ->modifyQueryUsing(fn(Builder $query)=>$query->whereIn('keterangan',['hadir','keluar_kantor','izin','tanpa_keterangan','lembur'])->orderByDesc('created_at'))
             ->columns($split)
             ->filters([]);
     }

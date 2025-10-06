@@ -45,8 +45,13 @@ class DinasLuarResource extends Resource
                 TextInput::make('judul')->required()->maxLength(255),
                 // Mengubah Textarea menjadi RichEditor untuk Markdown
                 RichEditor::make('deskripsi')->required()->columnSpan('full'),
-                DatePicker::make('tanggal_mulai')->required(),
-                DatePicker::make('tanggal_selesai')->required(),
+                DatePicker::make('tanggal_mulai')
+                    ->reactive()
+                    ->required(),
+                DatePicker::make('tanggal_selesai')
+                    ->reactive()
+                    ->minDate(fn($get)=>$get('tanggal_mulai'))
+                    ->required(),
                 // Field 'approved' disembunyikan dari form
                 Toggle::make('approved')
                     ->label('Disetujui')

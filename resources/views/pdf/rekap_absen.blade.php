@@ -43,7 +43,7 @@
                     <td><small>{{ $user['nip'] }}</small></td>
                     <td style="text-align: left;">{{ $user['name'] }}<br></td>
                     <td>{{ $user['total']['hadir'] }}</td>
-                    <td>{{ $user['total']['sakit'] }}</td>
+                    <td>{{ $user['total']['izin'] }}</td>
                     <td>{{ $user['total']['tanpa_keterangan'] }}</td>
                     <td>{{ $user['total']['lembur'] }} Jam</td>
                 </tr>
